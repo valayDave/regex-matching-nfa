@@ -8,3 +8,7 @@
 6. [Passing a Vector to Function in C++](https://www.geeksforgeeks.org/passing-vector-function-cpp/)
 7. [Using Iterators with Vectors](https://www.geeksforgeeks.org/iterators-c-stl/)
 8. [Using Cont Iterators When iterating Through Constant Arrays.](https://stackoverflow.com/questions/15020954/vector-iterator-no-match-for-operator)
+9. [Shunting Yard Algorithm Psuedo Code](https://brilliant.org/wiki/shunting-yard-algorithm/)
+10. [Using :: in C++](https://stackoverflow.com/questions/15649580/using-in-c)
+11. [Stacks in C++](https://www.geeksforgeeks.org/stack-push-and-pop-in-c-stl/)
+12. [Queues in C++](https://www.geeksforgeeks.org/queue-cpp-stl/)

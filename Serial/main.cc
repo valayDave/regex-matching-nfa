@@ -3,14 +3,66 @@
 #include <bits/stdc++.h>
 #include <stdlib.h>
 #include <string>
+#include <stack>
+#include <queue> 
 using namespace std;
+
+
+/**
+ *<summary>Check if a Character is an operator for a regular expression</summary> 
+ *<param name="c">character to be evaluated</param> 
+*/
+
+bool isOperator(char c)
+{
+	if(c == '+' || c == '*')
+		return true;
+
+	return false;
+}
+
+/**
+ *<summary>Check if a Character is an operand for a regular expression</summary> 
+ *<param name="c">character to be evaluated</param> 
+*/
+bool isOperand(char c) 
+{
+	if(c >= '0' && c <= '9') return true;
+	if(c >= 'a' && c <= 'z') return true;
+	if(c >= 'A' && c <= 'Z') return true;
+    if(c == '.') return true;
+	return false;
+}
+
+/**
+ *<summary>Find the Weight of the Operator to create the post fix notation</summary> 
+ *<param name="inputOperator"> Operator whose weight needs to be evaluated for post fix notation evaluation.</param>
+ *<return> The weight of the operator for determining precedence </return> 
+*/
+int getOperatorWeight(char inputOperator){
+    int weight = 1;
+    switch(inputOperator){
+        case '*':
+            weight=2;
+            break;
+        case '+':
+            weight=0;
+            break;
+    }   
+    return weight;
+}
+
+bool isHigherPresedence(char a, char b){
+   return  getOperatorWeight(a) > getOperatorWeight(b) ? true : false;    
+}
+
 
 /**
  * <summary>Take a bunch of Filename Vectors and extract the contents of the files within those files.</summary>
  * <param name="fileNames"> A Constant Vector Reference Passed to the function. Constant because it will not change.</param>   
  * <returns> Vector Of Strings that have the contents of the file</returns>  
 */
-std::vector <string> readFile(const vector<string> & fileNames)
+vector <string> readFiles(const vector<string> & fileNames)
 {
     //Use Vectors to Create an array of File Contents
     vector<string> files;
@@ -46,6 +98,55 @@ std::vector <string> readFile(const vector<string> & fileNames)
     return files;
 }
 
+/**
+ * <summary>Creates a Vector of strings to match for the Regular Expression Provided</summary>
+ * <param name='expression'>Regualar expression of the type "a+be*" or "(ab)+(c)"</param> 
+*/
+//TODO : Unsure of the Vector Datastructure here. 
+vector<string> getStringsToMatch(string expression, int maxWordLength){
+    stack<char> operatorStack;
+    queue<char> postFixQueue;
+    vector <string> output;
+
+    cout << "Starting Post Fix Notation "+ expression << endl;
+    //Convert the expression From an Infix Notation to a Post Fix notation. 
+    for(int i=0;i<expression.length();i++){
+         cout << expression[i] << endl;
+        if(isOperand(expression[i])){
+            postFixQueue.push(expression[i]);
+        }
+        else if(isOperator(expression[i])){
+            while(!operatorStack.empty() && isHigherPresedence(operatorStack.top(),expression[i])){
+                //
+                postFixQueue.push(operatorStack.top()); 
+                operatorStack.pop();
+            }
+            operatorStack.push(expression[i]);
+        }else if(expression[i] == '('){
+            operatorStack.push(expression[i]);
+        }else if(expression[i] == ')'){
+            while(!operatorStack.empty() && operatorStack.top()!='('){
+                postFixQueue.push(operatorStack.top());
+                operatorStack.pop();
+            }
+            //Removes the "(" from the Stack. 
+            operatorStack.pop();
+        }               
+    }
+    
+    //Compelete Post Fix Queue created Here. 
+    while(!operatorStack.empty()){
+        postFixQueue.push(operatorStack.top());
+        operatorStack.pop();
+    }
+
+    
+    //TODO: Creating the Vectors of Strings from post fix notation comes here 
+
+    return output;
+} 
+
+
 int main(int argc, char *argv[])
 {   
     //Arguement 0 is the Name of the Binary so it is ignored.
@@ -58,8 +159,17 @@ int main(int argc, char *argv[])
         fileNames.push_back(argv[i]);
         //cout << argv[i] << endl;
     }
-    vector <string> fileContents = readFile(fileNames);
-    for(int i=0; i<fileContents.size(); ++i){
-        cout << fileContents[i] << endl;
-    }
+    //vector <string> fileContents = readFiles(fileNames);
+
+    //TODO :Find the Largest word in a string. --> This is done so that the extent to which the * operator's evaluation needs to take place. 
+
+    //TODO :TURN Regex Ex Into an array of strings that need to be evaluated. 
+    
+    //TODO:Match The File Contents Strings with the array of strings that were found. 
+
+    vector<string> matchingStrings = getStringsToMatch(regularExpression,10);
+
+    // for(int i=0; i<fileContents.size(); ++i){
+    //     cout << fileContents[i] << endl;
+    // }
 }
