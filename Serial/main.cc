@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
     //As the Number of Files that will be passed to the Code with be unknown a Vector is chosen. This is Inefficient. I can use strings Instead of Vectors. 
     for(int i=2;i<argc;i++){
         fileNames.push_back(argv[i]);
-        //cout << argv[i] << endl;
     }
     vector <string> fileContents = readFile(fileNames);
     for(int i=0; i<fileContents.size(); ++i){
