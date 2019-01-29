@@ -12,3 +12,7 @@
 10. [Using :: in C++](https://stackoverflow.com/questions/15649580/using-in-c)
 11. [Stacks in C++](https://www.geeksforgeeks.org/stack-push-and-pop-in-c-stl/)
 12. [Queues in C++](https://www.geeksforgeeks.org/queue-cpp-stl/)
+13. [Printing Vectors in C++](https://www.techiedelight.com/print-vector-cpp/)
+14. [Reference in C++](http://yosefk.com/c++fqa/ref.html)
+15. [Pointers Vs References in C++](https://www.geeksforgeeks.org/pointers-vs-references-cpp/)
+16. [KMP Search Algorithm](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)
