@@ -18,6 +18,14 @@ struct trans {
     char symbol;
 };
 
+bool isOperand(char c);
+
+bool isOperator(char c);
+
+int getOperatorWeight(char inputOperator);
+
+bool isHigherPresedence(char a, char b);
+
 class NFA {
 public:
     vector< vector<trans> > node_graph;
@@ -85,6 +93,61 @@ public:
                         //continue;
     }
 };
+
+
+/**
+ *<summary>Check if a Character is an operator for a regular
+ *expression</summary> <param name="c">character to be evaluated</param>
+ */
+
+bool isOperator(char c) {
+  if (c == '+' || c == '*' || c == '-')
+    return true;
+
+  return false;
+}
+
+/**
+ *<summary>Check if a Character is an operand for a regular expression</summary>
+ *<param name="c">character to be evaluated</param>
+ */
+bool isOperand(char c) {
+  if (c >= '0' && c <= '9')
+    return true;
+  if (c >= 'a' && c <= 'z')
+    return true;
+  if (c >= 'A' && c <= 'Z')
+    return true;
+  if (c == '.')
+    return true;
+  return false;
+}
+
+/**
+ *<summary>Find the Weight of the Operator to create the post fix
+ *notation</summary> <param name="inputOperator"> Operator whose weight needs to
+ *be evaluated for post fix notation evaluation.</param> <return> The weight of
+ *the operator for determining precedence </return>
+ */
+int getOperatorWeight(char inputOperator) {
+  int weight = 1;
+  switch (inputOperator) {
+    case '*':  // Kleene Star -- Unary Operator
+      weight = 2;
+      break;
+    case '+':  // Union
+      weight = 0;
+      break;
+    case '-':  // Concatenation. --> Binary Operator
+      weight = 1;
+      break;
+  }
+  return weight;
+}
+
+bool isHigherPresedence(char a, char b) {
+  return getOperatorWeight(a) > getOperatorWeight(b) ? true : false;
+}
 
 //TODO: Create base NFA constructions for Kleene star
 
