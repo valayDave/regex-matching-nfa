@@ -64,12 +64,37 @@ public:
 
         // The Nodes in an NFA can be visulised as a graph where one can iterate through the graph.
 
-            //Start from the 0th Node and check take each character and see if it is going to the other States. 
-            //Take Epsilon transitions to reach other states and 
+        //Start from the 0th Node and check take each character and see if it is going to the other States. 
+        
+        //Take Epsilon transitions to reach other states and and then to th
+
+        //Or DFA Can be constructed from this. Once DFA is constructed traverse its's Nodal Graph to reach other states that address each token
+
+            //TODO : Psuedo Code : --> Still Incomplete. Need to Figure if recursion is the answer or something else.  
+                //state = 0;
+                //buffer = "";
+                //for each token t 
+                    //if state_trans_available(state,t) 
+                        //new_state =  move(state,transition_symbol) --> this yeilds next state
+                        //buffer+=t;
+                        //if new_state ==  is_final_state(state)
+                            // print buffer , column number etc.
+                            // buffer = "" --> reset the buffer. 
+                            //if   
+                    //else 
+                        //continue;
     }
 };
 
-// Creating NFA's
+//TODO: Create base NFA constructions for Kleene star
+
+//TODO: Create Base NFA constructions for Union
+
+//TODO:Create Base NFA constructions for Concatenation
+
+//TODO : Create a RE to NFA function that Takes the regular Expression converts it into a post fix operation and then constructs the NFA's from the Regex
+
+//TODO : Once the final NFA is constructed from postfix expression --> Either Convert that To DFA or Try and run the string matching in this NFA. 
 
 //TODO : Should I construct a DFA with this. 
 
