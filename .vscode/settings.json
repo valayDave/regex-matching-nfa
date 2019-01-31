@@ -5,5 +5,5 @@
         "iostream": "cpp",
         "ostream": "cpp"
     },
-    "C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: LLVM, AllowShortFunctionsOnASingleLine: None, ReflowComments: false}"
+    "C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: WebKit, AllowShortFunctionsOnASingleLine: None, ReflowComments: false, BreakBeforeBraces: Attach}"
 }

@@ -26,6 +26,10 @@ int getOperatorWeight(char inputOperator);
 
 bool isHigherPresedence(char a, char b);
 
+string changeRegexOperators(string regex);
+
+string convertRegexToPostfix(string expression);
+
 class NFA {
 public:
     vector< vector<trans> > node_graph;
@@ -101,7 +105,7 @@ public:
  */
 
 bool isOperator(char c) {
-  if (c == '+' || c == '*' || c == '-')
+  if (c == '+' || c == '*' || c == '|')
     return true;
 
   return false;
@@ -112,15 +116,15 @@ bool isOperator(char c) {
  *<param name="c">character to be evaluated</param>
  */
 bool isOperand(char c) {
-  if (c >= '0' && c <= '9')
-    return true;
-  if (c >= 'a' && c <= 'z')
-    return true;
-  if (c >= 'A' && c <= 'Z')
-    return true;
-  if (c == '.')
-    return true;
-  return false;
+    if (c >= '0' && c <= '9')
+        return true;
+    if (c >= 'a' && c <= 'z')
+        return true;
+    if (c >= 'A' && c <= 'Z')
+        return true;
+    if (c == '.')
+        return true;
+    return false;
 }
 
 /**
@@ -134,7 +138,7 @@ int getOperatorWeight(char inputOperator) {
     case '*':  // Kleene Star -- Unary Operator
       weight = 2;
       break;
-    case '|':  // Union
+    case '|':  // Union --> Binary Operator
       weight = 0;
       break;
     case '+':  // Concatenation. --> Binary Operator
@@ -174,6 +178,48 @@ string changeRegexOperators(string regex){
     return replacedRegex;
 }
 
+
+
+/**
+ * <summary>Creates a Vector of strings to match for the Regular Expression Provided</summary>
+ * <param name='expression'>Regualar expression of the type "a+be*" or "(ab)+(c)"</param>
+ */
+string convertRegexToPostfix(string expression) {
+    stack<char> operatorStack;
+    // Only Operators(+ or *) will have a single Character Operand Unless
+    // Otherwise. Concatenated Strings stored togather.
+    string output;
+    cout << "Starting Post Fix Notation " + expression << endl;
+    // Convert the expression From an Infix Notation to a Post Fix notation.
+    for (int i = 0; i < expression.length(); i++) {
+        if (isOperand(expression[i])) {
+            output += (expression[i]);
+        } else if (isOperator(expression[i])) {
+            if (!operatorStack.empty()) {
+                while (!operatorStack.empty() && operatorStack.top() != '(' && isHigherPresedence(operatorStack.top(), expression[i])) {
+                    output += (operatorStack.top());
+                    operatorStack.pop();
+                }
+            }
+            operatorStack.push(expression[i]);
+        } else if (expression[i] == '(') {
+            operatorStack.push(expression[i]);
+        } else if (expression[i] == ')') {
+            while (!operatorStack.empty() && operatorStack.top() != '(') {
+                output += (operatorStack.top());
+                operatorStack.pop();
+            }
+            // Removes the "(" from the Stack.
+            operatorStack.pop();
+        }
+    }
+    // Compelete Post Fix Queue created Here.
+    while (!operatorStack.empty()) {
+        output += (operatorStack.top());
+        operatorStack.pop();
+    }
+    return output;
+}
 //TODO: Create base NFA constructions for Kleene star
 
 //TODO: Create Base NFA constructions for Union
@@ -201,4 +247,7 @@ int main(int argc, char* argv[])
         // cout << argv[i] << endl;
     }
     string newRegex = changeRegexOperators(regularExpression);
+
+    string postfixRegex = convertRegexToPostfix(newRegex);
+    cout << "Post Fix Regex : "<< postfixRegex << endl;
 }
