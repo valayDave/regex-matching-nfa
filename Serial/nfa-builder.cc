@@ -37,12 +37,12 @@ public:
     vector<transition> node_trans;
     int final_state;
 
-    void set_transition(int start_vertex, int end_vertex, char trans_symbol) {
-      transition new_trans;
-      new_trans.trans_symbol = trans_symbol;
-      new_trans.vertex_start = start_vertex;
-      new_trans.vertex_end = end_vertex;
-      node_trans.push_back(new_trans);
+    void setTransition(int start_vertex, int end_vertex, char trans_symbol) {
+      transition newTrans;
+      newTrans.trans_symbol = trans_symbol;
+      newTrans.vertex_start = start_vertex;
+      newTrans.vertex_end = end_vertex;
+      node_trans.push_back(newTrans);
     }
 
     //Populates the Node Graph For Traversal.
@@ -98,6 +98,10 @@ public:
     }
 };
 
+
+NFA createSingleState(char symbol){
+    
+}
 
 /**
  *<summary>Check if a Character is an operator for a regular expression</summary> 
