@@ -10,21 +10,25 @@ using namespace std;
 struct transition {
     int vertex_start;
     int vertex_end;
-    char trans_symbol;
+    string trans_symbol;
 };
 
 struct trans {
     int destination;
-    char symbol;
+    string symbol;
 };
+
+string EPSILON_TRANSITION = "\u03B5";
 
 bool isOperand(char c);
 
 bool isOperator(char c);
 
-int getOperatorWeight(char inputOperator);
+bool checkBinaryOperation(char c);
 
 bool isHigherPresedence(char a, char b);
+
+int getOperatorWeight(char inputOperator);
 
 string changeRegexOperators(string regex);
 
@@ -35,9 +39,10 @@ public:
     vector< vector<trans> > node_graph;
     vector<int> vertices;
     vector<transition> node_trans;
-    int final_state;
+    vector<int> final_states;
+    int final_state;//TODO : Need to Evaluate if this is Correct Or Not. 
 
-    void setTransition(int start_vertex, int end_vertex, char trans_symbol) {
+    void set_transition(int start_vertex, int end_vertex, string trans_symbol) {
       transition newTrans;
       newTrans.trans_symbol = trans_symbol;
       newTrans.vertex_start = start_vertex;
@@ -67,6 +72,16 @@ public:
       }
     }
 
+    void set_final_state(int vertex){
+        final_state = vertex;
+        final_states.push_back(vertex);
+    }
+
+    vector<int> get_final_states(){
+        return final_states;
+    }
+
+    //TODO : Need to Evaluate if this is Correct Or Not. 
     int get_final_state() {
       return final_state;
     }
@@ -98,9 +113,94 @@ public:
     }
 };
 
+NFA concatNFAs(NFA a,NFA b){
+    NFA result;
+    //Set Total Vertices.
+    result.set_nodes(a.get_node_count()+b.get_node_count());
 
-NFA createSingleState(char symbol){
-    
+    //Set Transitions of NFA A into the consolidating NFA;
+    for(int i=0;i<a.node_trans.size();i++){
+        transition newTrans = a.node_trans.at(i);
+        result.set_transition(newTrans.vertex_start,newTrans.vertex_end,newTrans.trans_symbol);
+    }
+
+    //Set EPSILION_TRANSITIONS from all Final States in A to the Start States of B; : https://math.stackexchange.com/questions/349994/concatenation-of-2-finite-automata
+    vector<int> finalStateOfA = a.get_final_states();
+    for(int i=0;i<finalStateOfA.size();i++){
+        result.set_transition(finalStateOfA.at(i),a.get_node_count(),EPSILON_TRANSITION);
+    }
+
+    //setting Transtions of NFA B
+    for(int i=0;i<b.node_trans.size();i++){
+        transition newTrans = b.node_trans.at(i);
+        result.set_transition(newTrans.vertex_start+a.get_node_count(),newTrans.vertex_end+a.get_node_count(),newTrans.trans_symbol);
+    }
+
+    //Ideally Should Have One Final State; Still Skeptical about this.
+    result.set_final_state(a.get_node_count() + b.get_node_count()-1);
+
+    return result;
+}
+
+//This is to Print the Entire NFA so that There is some Reference on what is getting Constructed 
+void printNFA(NFA a){
+    transition tran;
+    cout << '\n';
+    for(int i=0;i<a.node_trans.size();i++){
+        tran = a.node_trans.at(i);
+        cout<<"q"<<tran.vertex_start<<" --> q"<<tran.vertex_end<<" : Symbol - "<<tran.trans_symbol<<endl;    
+    }
+    cout<<"\nThe final state is q"<<a.get_final_state()<<endl;
+}
+
+NFA createSingleSymbolNFA(char symbol){
+    NFA result;
+    result.set_nodes(2);
+    result.set_transition(0,1,string(1,symbol));
+    result.set_final_state(1);
+    return result;
+}
+
+NFA postFixNFABuilder(string postFixExpr){
+    stack<NFA> evaluationStack;
+    NFA result;
+    cout << "Reached To Post Fix Evaluation" << endl;
+    for(int i=0;i<postFixExpr.length();i++){
+        if(isOperand(postFixExpr[i])){
+            NFA operand = createSingleSymbolNFA(postFixExpr[i]);
+            //printNFA(operand);
+            evaluationStack.push(operand);
+        }else{ // It is an Operator
+            if(checkBinaryOperation(postFixExpr[i])){ 
+                NFA operand2 = evaluationStack.top();
+                evaluationStack.pop();
+                NFA operand1 = evaluationStack.top();
+                evaluationStack.pop();
+                if(postFixExpr[i] == '+'){
+                    NFA resultNFA = concatNFAs(operand1,operand2);
+                    evaluationStack.push(resultNFA);
+                    cout << "Concatenated 2 NFAs "<< endl;  
+                }else{ // Union Because its not Concatenation
+                    cout << "Kleene Star Not Handled." << endl;
+                    //TODO: Handle Union Operator Here.
+                }
+            }else{
+                cout << "Kleene Star Not Handled." << endl;
+                //TODO : Evaluate the Kleene star Operator Here.
+            }
+        }
+    }
+    if(evaluationStack.size() > 0){
+        if(evaluationStack.size() == 1){
+            result = evaluationStack.top();
+            evaluationStack.pop();
+        }else{
+            cout << "Something Messed Up. The Stack is of Size Greater Than 1" << endl;
+        }
+    }else{
+        cout << "Something Messed Up. The Stack is of Size Zero" << endl;
+    }
+    return result;
 }
 
 /**
@@ -113,6 +213,13 @@ bool isOperator(char c) {
     return true;
 
   return false;
+}
+
+bool checkBinaryOperation(char c){
+    if(c == '+' || c == '|'){
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -164,14 +271,14 @@ bool isHigherPresedence(char a, char b) {
 string changeRegexOperators(string regex){
     string replacedRegex="";
     for (int i = 0; i < regex.length(); i++) {
-        if (i == 0 || i== static_cast<int>(regex.length())-1) {
+        if (i == 0) {
             replacedRegex +=(regex[i]);
             continue;
         }else if (regex[i] =='+'){
             replacedRegex += '|';
-        }else if(isOperand(regex[i]) && isOperand(regex[i+1])){
-            replacedRegex +=(regex[i]);
+        }else if(isOperand(regex[i]) && isOperand(regex[i-1])){
             replacedRegex +=('+');
+            replacedRegex +=(regex[i]);
         }else if(regex[i] == ')' && (regex[i+1]=='(' || isOperand(regex[i+1]))){
             replacedRegex +=(regex[i]);
             replacedRegex +=('+');
@@ -254,4 +361,8 @@ int main(int argc, char* argv[])
 
     string postfixRegex = convertRegexToPostfix(newRegex);
     cout << "Post Fix Regex : "<< postfixRegex << endl;
+
+    NFA finalResult = postFixNFABuilder(postfixRegex);
+    
+    printNFA(finalResult);
 }
