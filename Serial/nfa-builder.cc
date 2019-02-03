@@ -7,6 +7,23 @@
 #include <string>
 using namespace std;
 
+struct DFA_trans{
+    set<int> vertex_start;
+    set<int> vertex_end;
+    string trans_symbol;
+    int renamed_vertex_start;
+    int renamed_vertex_end;
+};
+
+struct DFA_trans_mark{
+    set<int> vertex;
+    bool marked;
+    int renamed_vertex_id;
+    DFA_trans_mark(){
+        marked = false;
+    }
+};
+
 struct transition {
     int vertex_start;
     int vertex_end;
@@ -51,13 +68,22 @@ void printOutput(string fileName, int lineNumber, int startIndex,string patternM
 class NFA {
 public:
 
-    //node_graph[STATE_NUMBER] --> The Vector Inside this contains the transitions available from this State 
-    vector< vector<trans> > node_graph;
+    //--------NFA PROPERTIES---------------------------------------------    
+    vector< vector<trans> > nfa_node_graph; //nfa_node_graph[STATE_NUMBER] --> The Vector Inside this contains the transitions available from this State 
     vector<int> vertices;
     vector<transition> node_trans;
     vector<int> final_states;
-    int final_state;//TODO : Need to Evaluate if this is Correct Or Not. 
+    int final_state;//TODO : Need to Evaluate if this is Correct Or Not.
+    //-----------------------------------------------------
 
+    //---------------DFA IMPORTANT PROPERTIES--------------------------------------
+    vector<DFA_trans> dfa_transtions;
+    vector<DFA_trans_mark> Dstates;
+    vector<int> dfa_final_states; //The Final States Here are the renamed_vertexes present in the DFA Datastructure.
+    set<string> alphabet;
+    //-----------------------------------------------------
+
+    //---------------------------NFA BUILDING AND TRAVERSING METHODS---------------------------------------------------
     void set_transition(int start_vertex, int end_vertex, string trans_symbol) {
       transition newTrans;
       newTrans.trans_symbol = trans_symbol;
@@ -67,17 +93,17 @@ public:
     }
 
     //Populates the Node Graph For Traversal and returns the Same Graph.
-    vector< vector<trans> > construct_node_graph(){
+    vector< vector<trans> > construct_nfa_graph(){
         vector<transition>::iterator ptr;
-        node_graph.resize(get_node_count());
+        nfa_node_graph.resize(get_node_count());
         //Iterate through the node transitions and construct the graph 
         for(ptr = node_trans.begin();ptr < node_trans.end();ptr++){
             trans node_connect;
             node_connect.destination = ptr->vertex_end;
             node_connect.symbol = ptr->trans_symbol;
-            node_graph[ptr->vertex_start].push_back(node_connect);
+            nfa_node_graph[ptr->vertex_start].push_back(node_connect);
         }
-        return node_graph;
+        return nfa_node_graph;
     }
 
     int get_node_count() {
@@ -107,7 +133,7 @@ public:
     vector<trans> available_state_transitions(int state, string transition_symbol){
         vector<trans> available_transitions;
         vector<trans>::iterator state_ptr;
-        for(state_ptr=node_graph[state].begin();state_ptr<node_graph[state].end();state_ptr++){
+        for(state_ptr=nfa_node_graph[state].begin();state_ptr<nfa_node_graph[state].end();state_ptr++){
             //State Has an Allowed Transtion or An Epsilon Transtion than send that to the available transtions.
             if(state_ptr->symbol == transition_symbol || state_ptr->symbol == EPSILON_TRANSITION){
                 available_transitions.push_back(*state_ptr);
@@ -117,7 +143,7 @@ public:
     }
 
     vector<matched_symbol> match_string(string text) {
-        construct_node_graph();
+        construct_nfa_graph();
         vector<matched_symbol> symbols;
         symbols = traverse_graph(text,"",0,0,symbols);
         //This will be the Method through which the state transitions will happen.
@@ -126,6 +152,16 @@ public:
         //Take Epsilon transitions to reach other states =
         //Or DFA Can be constructed from this. Once DFA is constructed traverse its's Nodal Graph to reach other states that address each token
         return symbols;
+    }
+
+    bool check_for_final_state(int state){
+        vector<int>::iterator ptr;
+        for(ptr=final_states.begin();ptr< final_states.end();ptr++){
+            if(state == *ptr){
+                return true;
+            }
+        }
+        return false;
     }
 
     //DOUBT : CAN EPSILON LOOPING BE A PROBLEM --> This Literally Just Traverses the State Machine. --> May it be NFA or DFA.
@@ -166,7 +202,7 @@ public:
         vector<trans> available_transtions = available_state_transitions(currentState,token);
 
         if (available_transtions.size() > 0) {
-            //cout << "Available Transtions :" << available_transtions.size() << endl;
+            cout << "Available Transtions :" << available_transtions.size() << endl;
             // If one of the available transtions is a Final State then We need to print the Token we have found.
             for (int i = 0; i < available_transtions.size(); i++) {
                 trans newTranstion =available_transtions.at(i);
@@ -191,15 +227,168 @@ public:
         }
     }
 
-    bool check_for_final_state(int state){
+    //-------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    //-----------------------------------DFA BUILDING METHODS----------------------------------------------------------------
+    void convertToDFA(){
+        construct_nfa_graph();
+        construct_alphabet();
+        set<int> set_of_states(vertices.begin(),vertices.end());
+        set<int> start_state;start_state.insert(0);
+        set<int> start_states = epsilon_closure(start_state);
+        insert_to_d_states(start_states);
+        //todo : HANDLE THOSE CASES WHERE THERE IS A NULL SET FROM AN EPSILON CLOSURE FOR STATE 0.
+        // DFA_trans state0;
+        // state0.renamed_vertex_start=0;
+        // state0.vertex_start = start_states;
+        // dfa_transtions.push_back(state0);
+        do{
+            set<int> currentStateIds = get_unmarked_state();
+            //Mark The State Here.
+            mark_d_state(currentStateIds);
+            for (set<string>::iterator symbol=alphabet.begin();symbol != alphabet.end();++symbol) {
+                set<int> newStateIds = epsilon_closure(move(currentStateIds,*symbol));
+                if(is_new_dfa_state(newStateIds)){
+                    insert_to_d_states(newStateIds);
+                }
+                DFA_trans newState;
+                newState.vertex_start = currentStateIds;
+                newState.vertex_end = newStateIds;
+                newState.renamed_vertex_start = get_d_state_id(currentStateIds); //TODO Get a way to get the new Renamed DFA Counter.
+                newState.renamed_vertex_end = get_d_state_id(newStateIds);
+                dfa_transtions.push_back(newState);
+            }
+
+        }while(any_umarked_states());
+        
+        //Set the Final States Here.
+        for(vector<DFA_trans_mark>::iterator ptr=Dstates.begin();ptr < Dstates.end();ptr++){
+            for(set<int>::iterator state_ptr = ptr->vertex.begin();state_ptr != ptr->vertex.end();++state_ptr){
+                if(check_for_final_state(*state_ptr)){
+                    //Add the Name of the Renamed VertexIds to the Vertex of final state
+                    dfa_final_states.push_back(ptr->renamed_vertex_id);
+                    break;
+                }
+            }
+        }
+        cout << "DFA Is Constructed" << endl;
+    }
+
+    bool check_for_dfa_final_state(int state){
         vector<int>::iterator ptr;
-        for(ptr=final_states.begin();ptr< final_states.end();ptr++){
+        for(ptr=dfa_final_states.begin();ptr< dfa_final_states.end();ptr++){
             if(state == *ptr){
                 return true;
             }
         }
         return false;
     }
+
+    vector<int> get_dfa_final_state(){
+
+    }
+
+    //Gets the New Vertex IDs of the DFA 
+    int get_d_state_id(set<int> state){
+        int id;
+        for(vector<DFA_trans_mark>::iterator ptr = Dstates.begin();ptr < Dstates.end();ptr++){
+            if(ptr->vertex == state){
+                return ptr->renamed_vertex_id;
+            }
+        }
+        return id;//This Line should Never Be Reached otherwise code is not working properly    
+    }
+
+    //Marks the new state in the DStates Vector
+    void mark_d_state(set<int> state){
+        for(vector<DFA_trans_mark>::iterator ptr = Dstates.begin();ptr < Dstates.end();ptr++){
+            if(ptr->vertex == state){
+                ptr->marked = true;
+                return;
+            }
+        }
+    }
+
+    //Insert to the Vector of unmarked States.
+    void insert_to_d_states(set<int>states){
+        DFA_trans_mark transMark;
+        transMark.vertex = states;
+        transMark.renamed_vertex_id = Dstates.size();
+        Dstates.push_back(transMark);
+    }
+
+    //Check if it is a new DFA State in the DStates.
+    bool is_new_dfa_state(set<int>states){
+        for(vector<DFA_trans_mark>::iterator ptr = Dstates.begin();ptr < Dstates.end();ptr++){
+            if(ptr->vertex == states){
+                return false;
+            }
+        }
+        return true;    
+    }
+
+    //Finds an Unmarked state in the DStates Vector which holds all the Vertex Information for the DFA
+    set<int> get_unmarked_state(){
+        set<int> returnStateIds;
+        for(vector<DFA_trans_mark>::iterator ptr = Dstates.begin();ptr < Dstates.end();ptr++){
+            if(!ptr->marked){
+                 returnStateIds= ptr->vertex;
+                return returnStateIds;
+            }
+        }
+        return returnStateIds;  
+    }
+    
+    //Checks the Dstates Vector for Unmarked States.
+    bool any_umarked_states(){
+        for(vector<DFA_trans_mark>::iterator ptr = Dstates.begin();ptr < Dstates.end();ptr++){
+            if(!ptr->marked){
+                return true;
+            }
+        }
+        return false;        
+    }
+
+    void construct_alphabet(){
+        vector<transition>::iterator node_ptr;
+        for(node_ptr = node_trans.begin();node_ptr < node_trans.end();node_ptr++){
+            if(node_ptr->trans_symbol!=EPSILON_TRANSITION)
+            alphabet.insert(node_ptr->trans_symbol);
+        }
+        return;
+    }
+
+    //DFA Building Function
+    //Takes a Set of States and Returns the States that can be reached via Epsilon transitions for each of those Individual states
+    set<int> epsilon_closure(set<int>states){
+        set<int> epsilonReachableStates;
+        for (set<int>::iterator it = states.begin(); it != states.end(); ++it) {
+            vector<trans>::iterator node_ptr;
+            for(node_ptr = nfa_node_graph[*it].begin();node_ptr< nfa_node_graph[*it].end();node_ptr++){
+                if(node_ptr->symbol == EPSILON_TRANSITION){
+                    epsilonReachableStates.insert(node_ptr->destination);
+                }
+            }
+        }
+        return epsilonReachableStates;
+    }
+
+    //DFA Building Function
+    // Move takes a set of states T and input character a and returns all the states that can be reached on a given input character from all states in T.
+    set<int> move(set<int>states,string symbol){
+        set<int> movableStates;
+        for (set<int>::iterator it = states.begin(); it != states.end(); ++it) {
+            vector<trans>::iterator node_ptr;
+            for(node_ptr = nfa_node_graph[*it].begin();node_ptr< nfa_node_graph[*it].end();node_ptr++){
+                if(node_ptr->symbol == symbol){
+                    movableStates.insert(node_ptr->destination);
+                }
+            }
+        }
+        return movableStates;
+    }
+
+    //---------------------------------------------------------------------------------------------------
 };
 
 //Create Base NFA constructions for Concatenation
@@ -278,6 +467,21 @@ void printNFA(NFA a){
         cout<<"q"<<tran.vertex_start<<" --> q"<<tran.vertex_end<<" : Symbol - "<<tran.trans_symbol<<endl;    
     }
     cout<<"\nThe final state is q"<<a.get_final_state()<<endl;
+}
+
+void printDFA(NFA a){
+    DFA_trans tran;
+    cout << '\n';
+    for(int i=0;i<a.Dstates.size();i++){
+        tran = a.dfa_transtions.at(i);
+        cout<<"q"<<tran.renamed_vertex_start<<" --> q"<<tran.renamed_vertex_end<<" : Symbol - "<<tran.trans_symbol<<endl;    
+    }
+    cout<< "\nThe final state are "()<<endl;
+    
+    for(int i=0;i<a.dfa_final_states.size();i++){
+        cout << "q" << a.dfa_final_states.at(i) << " ";
+    }
+    cout<<endl;
 }
 
 NFA createSingleSymbolNFA(char symbol){
@@ -515,9 +719,10 @@ int main(int argc, char* argv[])
     
     printNFA(resultantNFA);
 
-    for(int i=0;i<fileNames.size();i++){
-        searchFile(resultantNFA,fileNames.at(i));
-    }
+    resultantNFA.convertToDFA();
+    // for(int i=0;i<fileNames.size();i++){
+    //     searchFile(resultantNFA,fileNames.at(i));
+    // }
 
 
 
