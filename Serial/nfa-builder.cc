@@ -46,6 +46,7 @@ struct graph_state{
     string buffer;
 };
 
+string DEFAULT_FILE_PATH = "Files/";
 string EPSILON_TRANSITION = "\u03B5";
 
 bool isOperand(char c);
@@ -62,8 +63,7 @@ string changeRegexOperators(string regex);
 
 string convertRegexToPostfix(string expression);
 
-string DEFAULT_FILE_PATH = "Files/";
-
+void print_set(set<int> a); 
 void printOutput(string fileName, int lineNumber, int startIndex,string patternMatched);
 class NFA {
 public:
@@ -230,6 +230,8 @@ public:
     //-------------------------------------------------------------------------------------------------------------------------------------------------
     
     //-----------------------------------DFA BUILDING METHODS----------------------------------------------------------------
+    
+    
     void convertToDFA(){
         construct_nfa_graph();
         construct_alphabet();
@@ -237,33 +239,45 @@ public:
         set<int> start_state;start_state.insert(0);
         set<int> start_states = epsilon_closure(start_state);
         insert_to_d_states(start_states);
-        //todo : HANDLE THOSE CASES WHERE THERE IS A NULL SET FROM AN EPSILON CLOSURE FOR STATE 0.
-        // DFA_trans state0;
-        // state0.renamed_vertex_start=0;
-        // state0.vertex_start = start_states;
-        // dfa_transtions.push_back(state0);
         do{
-            set<int> currentStateIds = get_unmarked_state();
+            set<int> currentStateIds = get_unmarked_state(); // This Method Also marks that StateId
             //Mark The State Here.
-            mark_d_state(currentStateIds);
+            cout <<"---------------------------------------------------------" << endl;
+            cout << "Marking State Transitions for The Following : "<<endl;
+            print_set(currentStateIds);
             for (set<string>::iterator symbol=alphabet.begin();symbol != alphabet.end();++symbol) {
-                set<int> newStateIds = epsilon_closure(move(currentStateIds,*symbol));
-                if(is_new_dfa_state(newStateIds)){
-                    insert_to_d_states(newStateIds);
+                set<int> newStateIds = move(currentStateIds,*symbol);
+                set<int> epsilson_trans_ids = epsilon_closure(newStateIds);
+                if(!epsilson_trans_ids.empty()){
+                    if(is_new_dfa_state(epsilson_trans_ids)){
+                        insert_to_d_states(epsilson_trans_ids);
+                    }
                 }
-                DFA_trans newState;
-                newState.vertex_start = currentStateIds;
-                newState.vertex_end = newStateIds;
-                newState.renamed_vertex_start = get_d_state_id(currentStateIds); //TODO Get a way to get the new Renamed DFA Counter.
-                newState.renamed_vertex_end = get_d_state_id(newStateIds);
-                dfa_transtions.push_back(newState);
+                cout << "Transition Found for Symbol " << *symbol << endl;
+                print_set(newStateIds);
+                cout << "Epsilon Closure For Above Transition " <<endl;
+                print_set(epsilson_trans_ids);
+                if(!newStateIds.empty()){
+                    DFA_trans newState;
+                    newState.vertex_start = currentStateIds;
+                    newState.vertex_end = epsilson_trans_ids;
+                    newState.renamed_vertex_start = get_d_state_id(currentStateIds); //TODO Get a way to get the new Renamed DFA Counter.
+                    newState.renamed_vertex_end = get_d_state_id(epsilson_trans_ids);
+                    cout << "Transition Marked From " <<newState.renamed_vertex_start << " TO " <<newState.renamed_vertex_end << endl;
+                    newState.trans_symbol = *symbol;
+                    dfa_transtions.push_back(newState);
+                }
             }
-
+        cout <<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
         }while(any_umarked_states());
         
+        cout << "The Final State of the NFA is :" << get_final_state() << endl;
         //Set the Final States Here.
         for(vector<DFA_trans_mark>::iterator ptr=Dstates.begin();ptr < Dstates.end();ptr++){
+            cout << "evaluating the DFA Vertex " << ptr->renamed_vertex_id << endl;
+            print_set(ptr->vertex);
             for(set<int>::iterator state_ptr = ptr->vertex.begin();state_ptr != ptr->vertex.end();++state_ptr){
+                cout << "Checking For FS in Vertex Set with :" << *state_ptr << " " <<check_for_final_state(*state_ptr)<< endl;
                 if(check_for_final_state(*state_ptr)){
                     //Add the Name of the Renamed VertexIds to the Vertex of final state
                     dfa_final_states.push_back(ptr->renamed_vertex_id);
@@ -299,7 +313,7 @@ public:
         return id;//This Line should Never Be Reached otherwise code is not working properly    
     }
 
-    //Marks the new state in the DStates Vector
+    //Marks the new state in the DStates Vector --> NOT IN USE.
     void mark_d_state(set<int> state){
         for(vector<DFA_trans_mark>::iterator ptr = Dstates.begin();ptr < Dstates.end();ptr++){
             if(ptr->vertex == state){
@@ -332,7 +346,8 @@ public:
         set<int> returnStateIds;
         for(vector<DFA_trans_mark>::iterator ptr = Dstates.begin();ptr < Dstates.end();ptr++){
             if(!ptr->marked){
-                 returnStateIds= ptr->vertex;
+                returnStateIds= ptr->vertex;
+                ptr->marked = true;
                 return returnStateIds;
             }
         }
@@ -370,6 +385,7 @@ public:
                 }
             }
         }
+        epsilonReachableStates.insert(states.begin(),states.end());
         return epsilonReachableStates;
     }
 
@@ -390,6 +406,13 @@ public:
 
     //---------------------------------------------------------------------------------------------------
 };
+
+void print_set(set<int> a){
+    for(set<int>::iterator itr=a.begin();itr != a.end();++itr){
+        cout << *itr << " ";
+    }
+    cout << endl;
+}
 
 //Create Base NFA constructions for Concatenation
 NFA concatNFAs(NFA a,NFA b){
@@ -421,6 +444,7 @@ NFA concatNFAs(NFA a,NFA b){
     return result;
 }
 
+//Create Base NFA constructions for Union
 NFA unionNFAs(NFA a, NFA b){
     NFA result;
 
@@ -472,14 +496,16 @@ void printNFA(NFA a){
 void printDFA(NFA a){
     DFA_trans tran;
     cout << '\n';
-    for(int i=0;i<a.Dstates.size();i++){
+    for(int i=0;i<a.dfa_transtions.size();i++){
         tran = a.dfa_transtions.at(i);
         cout<<"q"<<tran.renamed_vertex_start<<" --> q"<<tran.renamed_vertex_end<<" : Symbol - "<<tran.trans_symbol<<endl;    
     }
-    cout<< "\nThe final state are "()<<endl;
+    cout<< "\n The final state are " <<a.dfa_final_states.size() <<endl;
     
-    for(int i=0;i<a.dfa_final_states.size();i++){
-        cout << "q" << a.dfa_final_states.at(i) << " ";
+    if(a.dfa_final_states.size() > 0){
+        for(int i=0;i<a.dfa_final_states.size();i++){
+            cout << "q" << a.dfa_final_states.at(i) << " ";
+        }
     }
     cout<<endl;
 }
@@ -688,7 +714,7 @@ string convertRegexToPostfix(string expression) {
 }
 //TODO: Create base NFA constructions for Kleene star
 
-//TODO: Create Base NFA constructions for Union
+
 
 //TODO : Create a RE to NFA function that Takes the regular Expression converts it into a post fix operation and then constructs the NFA's from the Regex
 
@@ -720,6 +746,7 @@ int main(int argc, char* argv[])
     printNFA(resultantNFA);
 
     resultantNFA.convertToDFA();
+    printDFA(resultantNFA);
     // for(int i=0;i<fileNames.size();i++){
     //     searchFile(resultantNFA,fileNames.at(i));
     // }
