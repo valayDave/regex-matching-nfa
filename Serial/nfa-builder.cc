@@ -18,6 +18,11 @@ struct trans {
     string symbol;
 };
 
+struct matched_symbol{
+    int start_position;
+    string token;
+};
+
 string EPSILON_TRANSITION = "\u03B5";
 
 bool isOperand(char c);
@@ -36,7 +41,9 @@ string convertRegexToPostfix(string expression);
 
 class NFA {
 public:
-    vector< vector<trans> > node_graph;
+
+    //node_graph[STATE_NUMBER] --> The Vector Inside this contains the transitions available from this State 
+    vector<vector<trans>> node_graph;
     vector<int> vertices;
     vector<transition> node_trans;
     vector<int> final_states;
@@ -50,8 +57,8 @@ public:
       node_trans.push_back(newTrans);
     }
 
-    //Populates the Node Graph For Traversal.
-    void construct_node_graph(){
+    //Populates the Node Graph For Traversal and returns the Same Graph.
+    vector<vector<trans>> construct_node_graph(){
         vector<transition>::iterator ptr;
         //Iterate through the node transitions and construct the graph 
         for(ptr = node_trans.begin();ptr < node_trans.end();ptr++){ 
@@ -60,6 +67,7 @@ public:
             node_connect.symbol = ptr->trans_symbol;
             node_graph[ptr->vertex_start].push_back(node_connect);
         }
+        return node_graph;
     }
 
     int get_node_count() {
@@ -86,7 +94,28 @@ public:
       return final_state;
     }
 
-    void match_string(string text){
+    vector<trans> available_state_transitions(int state, string transition_symbol){
+        vector<trans> available_transitions;
+        vector<trans>::iterator state_ptr;
+        for(state_ptr=node_graph[state].begin();state_ptr<node_graph[state].end();state_ptr++){
+            //State Has an Allowed Transtion or An Epsilon Transtion than send that to the available transtions.
+            if(state_ptr->symbol == transition_symbol || state_ptr->symbol == EPSILON_TRANSITION){
+                available_transitions.push_back(*state_ptr);
+            }
+        }
+        return available_transitions;
+    }
+
+    void match_string(string text) {
+
+        construct_node_graph();
+
+        string evaluatedTxt = "";
+        int i=0,current_state = 0;
+        while(evaluatedTxt!=text){
+            evaluatedTxt+=text[i];
+
+        }
         //This will be the Method through which the state transitions will happen.
 
         // The Nodes in an NFA can be visulised as a graph where one can iterate through the graph.
@@ -111,7 +140,72 @@ public:
                     //else 
                         //continue;
     }
+    //token should be a single character String or EPSILON
+    void traverse_graph(string buffer,string token,int currentState){
+        vector<trans> available_transtions = available_state_transitions(currentState,token);
+        if(available_transtions.size() > 0){
+
+        }else{  
+            //TODO : Need to Figure what we need to do.
+        }
+    }
+
+    //DOUBT : CAN EPSILON LOOPING BE A PROBLEM --> This Literally Just Traverses the State Machine. --> May it be NFA or DFA.
+    //This function Evaluates a path from a current Node to the Other possible Nodes and finds if that path is going to have any 
+    vector<matched_symbol> evaluate_path(string text,string buffer,int currentCharPosition,int currentState,vector<matched_symbol>symbols){
+        //Crossed the Length of the String so Return back to the main function.
+        if(currentCharPosition>=text.length()){
+            return symbols;
+        }
+        string token = string(1,text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated.
+        buffer+=token; // TODO : Evaluate Weather this line is correct or not.
+
+        if (check_for_final_state(currentState)) {
+            //TODO/DOUBT : Should I add the strings here and store it is the mapped_symbol Vector Arr or should it be done when the currentState == final_state.
+            matched_symbol symbol;
+            symbol.start_position = currentCharPosition;
+            symbol.token = buffer;
+            symbols.push_back(symbol);
+        }
+        //Available Transitions from the current Node. 
+        vector<trans> available_transtions = available_state_transitions(currentState,token);
+
+        if (available_transtions.size() > 0) {
+            // If one of the available transtions is a Final State then We need to print the Token we have found.
+            for (int i = 0; i < available_transtions.size(); i++) {
+                int newCharPosition = currentCharPosition;
+                if(available_transtions.at(i).symbol != EPSILON_TRANSITION){
+                    newCharPosition = ++currentCharPosition;
+                }
+                int newState = available_transtions.at(i).destination ;
+                evaluate_path(text, buffer, newCharPosition, newState,symbols);
+            }
+        } else {
+            //TODO : Need to Figure what we need to do.
+            int newCharPosition = ++currentCharPosition;
+            int newStartState = 0;
+            string newBuffer = "";
+            evaluate_path(text, newBuffer, newCharPosition, newStartState,symbols);
+        }
+    }
+
+    bool check_for_final_state(int state){
+        vector<int>::iterator ptr;
+        for(ptr=final_states.begin();ptr< final_states.end();ptr++){
+            if(state == *ptr){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void tranverse_path(){
+        
+    }
 };
+
+
+
 
 NFA concatNFAs(NFA a,NFA b){
     NFA result;
@@ -164,7 +258,6 @@ NFA createSingleSymbolNFA(char symbol){
 NFA postFixNFABuilder(string postFixExpr){
     stack<NFA> evaluationStack;
     NFA result;
-    cout << "Reached To Post Fix Evaluation" << endl;
     for(int i=0;i<postFixExpr.length();i++){
         if(isOperand(postFixExpr[i])){
             NFA operand = createSingleSymbolNFA(postFixExpr[i]);
@@ -179,7 +272,6 @@ NFA postFixNFABuilder(string postFixExpr){
                 if(postFixExpr[i] == '+'){
                     NFA resultNFA = concatNFAs(operand1,operand2);
                     evaluationStack.push(resultNFA);
-                    cout << "Concatenated 2 NFAs "<< endl;  
                 }else{ // Union Because its not Concatenation
                     cout << "Kleene Star Not Handled." << endl;
                     //TODO: Handle Union Operator Here.
