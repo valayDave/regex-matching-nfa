@@ -204,9 +204,6 @@ public:
     }
 };
 
-
-
-
 NFA concatNFAs(NFA a,NFA b){
     NFA result;
     //Set Total Vertices.
@@ -381,8 +378,6 @@ string changeRegexOperators(string regex){
     return replacedRegex;
 }
 
-
-
 /**
  * <summary>Creates a Vector of strings to match for the Regular Expression Provided</summary>
  * <param name='expression'>Regualar expression of the type "a+be*" or "(ab)+(c)"</param>
@@ -454,7 +449,11 @@ int main(int argc, char* argv[])
     string postfixRegex = convertRegexToPostfix(newRegex);
     cout << "Post Fix Regex : "<< postfixRegex << endl;
 
-    NFA finalResult = postFixNFABuilder(postfixRegex);
+    NFA resultantNFA = postFixNFABuilder(postfixRegex);
     
-    printNFA(finalResult);
+    printNFA(resultantNFA);
+
+    cout << endl;
+
+
 }
