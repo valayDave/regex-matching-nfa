@@ -39,11 +39,14 @@ string changeRegexOperators(string regex);
 
 string convertRegexToPostfix(string expression);
 
+string DEFAULT_FILE_PATH = "Files/";
+
+void printOutput(string fileName, int lineNumber, int startIndex,string patternMatched);
 class NFA {
 public:
 
     //node_graph[STATE_NUMBER] --> The Vector Inside this contains the transitions available from this State 
-    vector<vector<trans>> node_graph;
+    vector< vector<trans> > node_graph;
     vector<int> vertices;
     vector<transition> node_trans;
     vector<int> final_states;
@@ -58,10 +61,11 @@ public:
     }
 
     //Populates the Node Graph For Traversal and returns the Same Graph.
-    vector<vector<trans>> construct_node_graph(){
+    vector< vector<trans> > construct_node_graph(){
         vector<transition>::iterator ptr;
+        node_graph.resize(get_node_count());
         //Iterate through the node transitions and construct the graph 
-        for(ptr = node_trans.begin();ptr < node_trans.end();ptr++){ 
+        for(ptr = node_trans.begin();ptr < node_trans.end();ptr++){
             trans node_connect;
             node_connect.destination = ptr->vertex_end;
             node_connect.symbol = ptr->trans_symbol;
@@ -106,16 +110,10 @@ public:
         return available_transitions;
     }
 
-    void match_string(string text) {
-
+    vector<matched_symbol> match_string(string text) {
         construct_node_graph();
-
-        string evaluatedTxt = "";
-        int i=0,current_state = 0;
-        while(evaluatedTxt!=text){
-            evaluatedTxt+=text[i];
-
-        }
+        vector<matched_symbol> symbols;
+        symbols = traverse_graph(text,"",0,0,false,symbols);
         //This will be the Method through which the state transitions will happen.
 
         // The Nodes in an NFA can be visulised as a graph where one can iterate through the graph.
@@ -139,53 +137,55 @@ public:
                             //if   
                     //else 
                         //continue;
-    }
-    //token should be a single character String or EPSILON
-    void traverse_graph(string buffer,string token,int currentState){
-        vector<trans> available_transtions = available_state_transitions(currentState,token);
-        if(available_transtions.size() > 0){
-
-        }else{  
-            //TODO : Need to Figure what we need to do.
-        }
+        return symbols;
     }
 
     //DOUBT : CAN EPSILON LOOPING BE A PROBLEM --> This Literally Just Traverses the State Machine. --> May it be NFA or DFA.
     //This function Evaluates a path from a current Node to the Other possible Nodes and finds if that path is going to have any 
-    vector<matched_symbol> evaluate_path(string text,string buffer,int currentCharPosition,int currentState,vector<matched_symbol>symbols){
+    vector<matched_symbol> traverse_graph(string text,string buffer,int currentCharPosition,int currentState,bool cameViaEpsilon,vector<matched_symbol>symbols){
         //Crossed the Length of the String so Return back to the main function.
         if(currentCharPosition>=text.length()){
+            //cout << "Reached The End of Chars " << symbols.size() << endl;
             return symbols;
         }
-        string token = string(1,text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated.
-        buffer+=token; // TODO : Evaluate Weather this line is correct or not.
+        string token = string(1,text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated. 
 
         if (check_for_final_state(currentState)) {
             //TODO/DOUBT : Should I add the strings here and store it is the mapped_symbol Vector Arr or should it be done when the currentState == final_state.
+            //cout << "Adding Buffer to Matched Symbols " << buffer << endl;
+            //cout << endl;
             matched_symbol symbol;
             symbol.start_position = currentCharPosition;
             symbol.token = buffer;
             symbols.push_back(symbol);
         }
+        if(!cameViaEpsilon){
+            buffer+=token; // TODO : Evaluate Weather this line is correct or not.
+        }
+        //cout << "Evaluating Symbol :" <<token << " "  << "On State : " << currentState << " With Buffer: " << buffer << endl;
         //Available Transitions from the current Node. 
         vector<trans> available_transtions = available_state_transitions(currentState,token);
 
         if (available_transtions.size() > 0) {
             // If one of the available transtions is a Final State then We need to print the Token we have found.
             for (int i = 0; i < available_transtions.size(); i++) {
+                trans newTranstion =available_transtions.at(i);
                 int newCharPosition = currentCharPosition;
-                if(available_transtions.at(i).symbol != EPSILON_TRANSITION){
+                bool epsilon = true;
+                if(newTranstion.symbol != EPSILON_TRANSITION){
+                    epsilon = false;
                     newCharPosition = ++currentCharPosition;
                 }
-                int newState = available_transtions.at(i).destination ;
-                evaluate_path(text, buffer, newCharPosition, newState,symbols);
+                int newState = newTranstion.destination ;
+                //cout << "Traversing To Destination : " << newTranstion.destination << " With the Symbol :" << newTranstion.symbol << endl;
+                return traverse_graph(text, buffer, newCharPosition, newState,epsilon,symbols);
             }
         } else {
             //TODO : Need to Figure what we need to do.
             int newCharPosition = ++currentCharPosition;
             int newStartState = 0;
             string newBuffer = "";
-            evaluate_path(text, newBuffer, newCharPosition, newStartState,symbols);
+            return traverse_graph(text, newBuffer, newCharPosition, newStartState,false,symbols);
         }
     }
 
@@ -378,6 +378,32 @@ string changeRegexOperators(string regex){
     return replacedRegex;
 }
 
+void searchFile(NFA regexEvaluator, string fileName) {
+    //string fileContent = readFile(fileName);
+    int lineNumber = 1;
+    string filePath = DEFAULT_FILE_PATH + fileName;
+    ifstream file;
+    string line;
+    file.open(filePath.c_str());
+    if (file.is_open()) {
+        while (getline(file, line)) {
+            vector<matched_symbol> indexMatches = regexEvaluator.match_string(line);
+            if (!indexMatches.empty()) {
+                for (int i = 0; i < indexMatches.size(); i++) {
+                    printOutput(fileName, lineNumber, indexMatches.at(i).start_position, indexMatches.at(i).token);
+                }
+            }
+            lineNumber++;
+        }
+    } else {
+        cout << "File Didn't Open" << endl;
+    }
+}
+
+void printOutput(string fileName, int lineNumber, int startIndex,string patternMatched){
+    cout << fileName + ", " << lineNumber << ", " << startIndex << ", "<<  static_cast<int>(patternMatched.length()) + startIndex << ": "+patternMatched << endl;
+}
+
 /**
  * <summary>Creates a Vector of strings to match for the Regular Expression Provided</summary>
  * <param name='expression'>Regualar expression of the type "a+be*" or "(ab)+(c)"</param>
@@ -453,7 +479,10 @@ int main(int argc, char* argv[])
     
     printNFA(resultantNFA);
 
-    cout << endl;
+    for(int i=0;i<fileNames.size();i++){
+        searchFile(resultantNFA,fileNames.at(i));
+    }
+
 
 
 }
