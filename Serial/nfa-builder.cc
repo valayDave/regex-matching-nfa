@@ -255,7 +255,7 @@ public:
             //Mark The State Here.
             //cout <<"---------------------------------------------------------" << endl;
             //cout << "Marking State Transitions for The Following : "<<endl;
-            print_set(currentStateIds);
+            //print_set(currentStateIds);
             for (set<string>::iterator symbol=alphabet.begin();symbol != alphabet.end();++symbol) {
                 set<int> newStateIds = move(currentStateIds,*symbol);
                 set<int> epsilson_trans_ids = epsilon_closure(newStateIds);
@@ -544,7 +544,6 @@ NFA unionNFAs(NFA a, NFA b){
         transition newTrans = a.node_trans.at(i);
         result.set_transition(newTrans.vertex_start+1,newTrans.vertex_end+1,newTrans.trans_symbol);
         if(i== a.node_trans.size()-1){
-            cout << "setting Epsilon Trans From "<< a.node_trans.at(i).vertex_end+1 << " " << a.get_node_count()+b.get_node_count()+1 << endl; 
             result.set_transition(a.node_trans.at(i).vertex_end+1,a.get_node_count()+b.get_node_count()+1,EPSILON_TRANSITION);
         }
     }
@@ -556,7 +555,6 @@ NFA unionNFAs(NFA a, NFA b){
         transition newTrans = b.node_trans.at(i);
         result.set_transition(newTrans.vertex_start+1 + a.get_node_count(),newTrans.vertex_end+1 + a.get_node_count(),newTrans.trans_symbol);
         if(i== b.node_trans.size()-1){
-            cout << "setting Epsilon Trans From "<< b.node_trans.at(i).vertex_end+1+a.get_node_count() << " " << a.get_node_count()+b.get_node_count()+1 << endl;
             result.set_transition(b.node_trans.at(i).vertex_end+1+a.get_node_count(),a.get_node_count()+b.get_node_count()+1,EPSILON_TRANSITION);
         }
     }
@@ -771,7 +769,6 @@ void searchFile(NFA regexEvaluator, string fileName) {
     string filePath = DEFAULT_FILE_PATH + fileName;
     ifstream file;
     string line;
-    cout << "Testing File" << endl;
     file.open(filePath.c_str());
     if (file.is_open()) {
         while (getline(file, line)) {
