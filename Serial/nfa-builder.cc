@@ -175,19 +175,7 @@ public:
         return false;
     }
 
-    //DOUBT : CAN EPSILON LOOPING BE A PROBLEM --> This Literally Just Traverses the State Machine. --> May it be NFA or DFA.
-    /**
-     * <summary>
-     * This function Evaluates a path from a current Node to the Other possible Nodes and finds if that path is going to reach the Final state
-     * .If it reaches the final State then it will store the values in the symbols vector. 
-     * </summary>
-     * <param name="text">The actual Text on which the Regex needs to be evaluated</param>
-     * <param name="buffer"> The buffer in which the past characters that got traversed through the states are stored</param>
-     * <param name="currentCharPosition">The position of the character in the text that is being evaluated</param>
-     * <param name="currentState">The Current state in the graph that from which the traversal will be done.</param>
-     * <param name="symbols">The Vector which will hold all the matched Symbols it from using this NFA.</param>
-     * <returns name="symbols"> The vector Of the matched_symbols</returns>
-     * */ 
+    
     vector<matched_symbol> traverse_graph(string text,string buffer,int currentCharPosition,int currentState,vector<matched_symbol>symbols){
         //Crossed the Length of the String so Return back to the main function.
         if(currentCharPosition>=text.length()){
@@ -243,7 +231,7 @@ public:
     //-----------------------------------DFA BUILDING METHODS----------------------------------------------------------------
     
     
-    void convertToDFA(){
+    void convert_to_dfa(){
         construct_nfa_graph();
         construct_alphabet();
         set<int> set_of_states(vertices.begin(),vertices.end());
@@ -334,6 +322,18 @@ public:
         return symbols;
     }
 
+    /**
+     * <summary>
+     * This function Evaluates a path from a current Node to the Other possible Nodes and finds if that path is going to reach the Final state
+     * .If it reaches the final State then it will store the values in the symbols vector. 
+     * </summary>
+     * <param name="text">The actual Text on which the Regex needs to be evaluated</param>
+     * <param name="buffer"> The buffer in which the past characters that got traversed through the states are stored</param>
+     * <param name="currentCharPosition">The position of the character in the text that is being evaluated</param>
+     * <param name="currentState">The Current state in the graph that from which the traversal will be done.</param>
+     * <param name="symbols">The Vector which will hold all the matched Symbols it from using this NFA.</param>
+     * <returns name="symbols"> The vector Of the matched_symbols</returns>
+     * */ 
     vector<matched_symbol> traverse_dfa_graph(string text, string buffer, int currentCharPosition, int currentState, vector<matched_symbol> symbols) {
         //Crossed the Length of the String so Return back to the main function.
         if (currentCharPosition >= text.length()) {
@@ -853,7 +853,7 @@ int main(int argc, char* argv[])
     
     //printNFA(resultantNFA);
 
-    resultantNFA.convertToDFA();
+    resultantNFA.convert_to_dfa();
     
     //printDFA(resultantNFA);
     for(int i=0;i<fileNames.size();i++){
