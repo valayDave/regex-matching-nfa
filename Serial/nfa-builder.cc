@@ -560,8 +560,25 @@ NFA unionNFAs(NFA a, NFA b){
     return result;
 }
 
-NFA KleeneNFA(NFA a){
 
+//NFA Created On Basis Of :: https://medium.com/@DmitrySoshnikov/building-a-regexp-machine-part-2-finite-automata-nfa-fragments-5a7c5c005ef0
+NFA KleeneNFA(NFA a){
+    NFA result;
+    result.set_nodes(a.get_node_count()+2);
+    result.set_transition(0,1,EPSILON_TRANSITION);
+    
+    for(int i=0;i<a.node_trans.size();i++){
+        transition newTrans = a.node_trans.at(i);
+        result.set_transition(newTrans.vertex_start+1,newTrans.vertex_end+1,newTrans.trans_symbol);    
+    }
+
+    result.set_transition(a.get_node_count(), a.get_node_count() + 1, EPSILON_TRANSITION);
+	result.set_transition(a.get_node_count(), 1, EPSILON_TRANSITION);
+	result.set_transition(0, a.get_node_count() + 1, EPSILON_TRANSITION);
+
+	result.set_final_state(a.get_node_count() + 1);
+
+    return result;
 }
 
 //This is to Print the Entire NFA so that There is some Reference on what is getting Constructed 
@@ -623,8 +640,10 @@ NFA postFixNFABuilder(string postFixExpr){
                     evaluationStack.push(resultNFA);
                 }
             }else{
-                cout << "Kleene Star Not Handled." << endl;
-                //TODO : Evaluate the Kleene star Operator Here.
+                //Evaluate the Kleene star Operator Here.
+                NFA operand = evaluationStack.top();
+                evaluationStack.pop();
+                evaluationStack.push(KleeneNFA(operand));                
             }
         }
     }
@@ -796,13 +815,7 @@ string convertRegexToPostfix(string expression) {
 }
 //TODO: Create base NFA constructions for Kleene star
 
-
-
-//TODO : Create a RE to NFA function that Takes the regular Expression converts it into a post fix operation and then constructs the NFA's from the Regex
-
 //TODO : Once the final NFA is constructed from postfix expression --> Either Convert that To DFA or Try and run the string matching in this NFA.
-
-//TODO : Should I construct a DFA with this.
 
 int main(int argc, char* argv[])
 {
@@ -833,7 +846,4 @@ int main(int argc, char* argv[])
     for(int i=0;i<fileNames.size();i++){
         searchFile(resultantNFA,fileNames.at(i));
     }
-
-
-
 }
