@@ -23,6 +23,12 @@ struct matched_symbol{
     string token;
 };
 
+struct graph_state{
+    trans avail_trans;
+    int char_position;
+    string buffer;
+};
+
 string EPSILON_TRANSITION = "\u03B5";
 
 bool isOperand(char c);
@@ -113,7 +119,7 @@ public:
     vector<matched_symbol> match_string(string text) {
         construct_node_graph();
         vector<matched_symbol> symbols;
-        symbols = traverse_graph(text,"",0,0,false,symbols);
+        symbols = traverse_graph(text,"",0,0,symbols);
         //This will be the Method through which the state transitions will happen.
         //The Nodes in an NFA can be visulised as a graph where one can iterate through the graph.
         //Start from the 0th Node and check take each character and see if it is going to the other States. 
@@ -132,53 +138,56 @@ public:
      * <param name="buffer"> The buffer in which the past characters that got traversed through the states are stored</param>
      * <param name="currentCharPosition">The position of the character in the text that is being evaluated</param>
      * <param name="currentState">The Current state in the graph that from which the traversal will be done.</param>
-     * <param name="cameViaEpsilon">If a transtion took place via Epsilon then the transition this is used to evaluate if the token being assed should be added to the buffer or not.</param>
      * <param name="symbols">The Vector which will hold all the matched Symbols it from using this NFA.</param>
      * <returns name="symbols"> The vector Of the matched_symbols</returns>
      * */ 
-    vector<matched_symbol> traverse_graph(string text,string buffer,int currentCharPosition,int currentState,bool cameViaEpsilon,vector<matched_symbol>symbols){
+    vector<matched_symbol> traverse_graph(string text,string buffer,int currentCharPosition,int currentState,vector<matched_symbol>symbols){
         //Crossed the Length of the String so Return back to the main function.
         if(currentCharPosition>=text.length()){
-            //cout << "Reached The End of Chars " << symbols.size() << endl;
+            cout << "Reached The End of Chars " << symbols.size() << endl;
             return symbols;
         } 
+        string token = string(1,text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated.
         if (check_for_final_state(currentState)) {
             //TODO/DOUBT : Should I add the strings here and store it is the mapped_symbol Vector Arr or should it be done when the currentState == final_state.
-            //cout << "Adding Buffer to Matched Symbols " << buffer << endl;
-            //cout << endl;
+            cout << "Adding Buffer to Matched Symbols " << buffer << endl;
+            cout << endl;
             matched_symbol symbol;
             symbol.start_position = currentCharPosition;
             symbol.token = buffer;
             symbols.push_back(symbol);
         }
-        string token = string(1,text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated.
-        if(!cameViaEpsilon){
-            buffer+=token; // TODO : Evaluate Weather this line is correct or not.
-        }
-        //cout << "Evaluating Symbol :" <<token << " "  << "On State : " << currentState << " With Buffer: " << buffer << endl;
+        
+        // if(!cameViaEpsilon){
+        //     buffer+=token; // TODO : Evaluate Weather this line is correct or not.
+        // }
+        cout << "Evaluating Symbol :" <<token << " "  << "On State : " << currentState << " With Buffer: " << buffer << endl;
         //Available Transitions from the current Node. 
         vector<trans> available_transtions = available_state_transitions(currentState,token);
 
         if (available_transtions.size() > 0) {
+            //cout << "Available Transtions :" << available_transtions.size() << endl;
             // If one of the available transtions is a Final State then We need to print the Token we have found.
             for (int i = 0; i < available_transtions.size(); i++) {
                 trans newTranstion =available_transtions.at(i);
                 int newCharPosition = currentCharPosition;
-                bool epsilon = true;
                 if(newTranstion.symbol != EPSILON_TRANSITION){
-                    epsilon = false;
+                    buffer+=token;
                     newCharPosition = ++currentCharPosition;
                 }
                 int newState = newTranstion.destination ;
-                //cout << "Traversing To Destination : " << newTranstion.destination << " With the Symbol :" << newTranstion.symbol << endl;
-                return traverse_graph(text, buffer, newCharPosition, newState,epsilon,symbols);
+                cout << "Traversing To Destination : " << newTranstion.destination << " With the Symbol :" << newTranstion.symbol << endl;
+                return traverse_graph(text, buffer, newCharPosition, newState,symbols);
+                //vector<matched_symbol> newMatchedSymbols = traverse_graph(text, buffer, newCharPosition, newState,epsilon,symbols);
+              //  symbols.insert(symbols.end(),newMatchedSymbols.begin(),newMatchedSymbols.end());
             }
+            //return symbols;
         } else {
             //Reset the state back to 0 So that New characters can be traversed through this.
             int newCharPosition = ++currentCharPosition;
             int newStartState = 0;
             string newBuffer = "";
-            return traverse_graph(text, newBuffer, newCharPosition, newStartState,false,symbols);
+            return traverse_graph(text, newBuffer, newCharPosition, newStartState,symbols);
         }
     }
 
@@ -223,6 +232,43 @@ NFA concatNFAs(NFA a,NFA b){
     return result;
 }
 
+NFA unionNFAs(NFA a, NFA b){
+    NFA result;
+
+    result.set_nodes(a.get_node_count()+b.get_node_count()+2);
+
+    for(int i=0;i<a.node_trans.size();i++){
+        if(i==0){
+            result.set_transition(0,1,EPSILON_TRANSITION);
+        }
+        transition newTrans = a.node_trans.at(i);
+        result.set_transition(newTrans.vertex_start+1,newTrans.vertex_end+1,newTrans.trans_symbol);
+        if(i== a.node_trans.size()-1){
+            cout << "setting Epsilon Trans From "<< a.node_trans.at(i).vertex_end+1 << " " << a.get_node_count()+b.get_node_count()+1 << endl; 
+            result.set_transition(a.node_trans.at(i).vertex_end+1,a.get_node_count()+b.get_node_count()+1,EPSILON_TRANSITION);
+        }
+    }
+
+    for(int i=0;i<b.node_trans.size();i++){
+        if(i==0){
+            result.set_transition(0,a.get_node_count()+1,EPSILON_TRANSITION);
+        }
+        transition newTrans = b.node_trans.at(i);
+        result.set_transition(newTrans.vertex_start+1 + a.get_node_count(),newTrans.vertex_end+1 + a.get_node_count(),newTrans.trans_symbol);
+        if(i== b.node_trans.size()-1){
+            cout << "setting Epsilon Trans From "<< b.node_trans.at(i).vertex_end+1+a.get_node_count() << " " << a.get_node_count()+b.get_node_count()+1 << endl;
+            result.set_transition(b.node_trans.at(i).vertex_end+1+a.get_node_count(),a.get_node_count()+b.get_node_count()+1,EPSILON_TRANSITION);
+        }
+    }
+
+    result.set_final_state(a.get_node_count()+b.get_node_count()+1);
+    return result;
+}
+
+NFA KleeneNFA(NFA a){
+
+}
+
 //This is to Print the Entire NFA so that There is some Reference on what is getting Constructed 
 void printNFA(NFA a){
     transition tran;
@@ -260,8 +306,9 @@ NFA postFixNFABuilder(string postFixExpr){
                     NFA resultNFA = concatNFAs(operand1,operand2);
                     evaluationStack.push(resultNFA);
                 }else{ // Union Because its not Concatenation
-                    cout << "Kleene Star Not Handled." << endl;
-                    //TODO: Handle Union Operator Here.
+                    // Handle Union Operator Here.
+                    NFA resultNFA = unionNFAs(operand1,operand2);
+                    evaluationStack.push(resultNFA);
                 }
             }else{
                 cout << "Kleene Star Not Handled." << endl;
@@ -374,6 +421,7 @@ void searchFile(NFA regexEvaluator, string fileName) {
     string filePath = DEFAULT_FILE_PATH + fileName;
     ifstream file;
     string line;
+    cout << "Testing File" << endl;
     file.open(filePath.c_str());
     if (file.is_open()) {
         while (getline(file, line)) {
