@@ -253,8 +253,8 @@ public:
         do{
             set<int> currentStateIds = get_unmarked_state(); // This Method Also marks that StateId
             //Mark The State Here.
-           // cout <<"---------------------------------------------------------" << endl;
-            //cout << "Marking State Transitions for The Following : "<<endl;
+            cout <<"---------------------------------------------------------" << endl;
+            cout << "Marking State Transitions for The Following : "<<endl;
             print_set(currentStateIds);
             for (set<string>::iterator symbol=alphabet.begin();symbol != alphabet.end();++symbol) {
                 set<int> newStateIds = move(currentStateIds,*symbol);
@@ -264,22 +264,22 @@ public:
                         insert_to_d_states(epsilson_trans_ids);
                     }
                 }
-                //cout << "Transition Found for Symbol " << *symbol << endl;
-               // print_set(newStateIds);
-                //cout << "Epsilon Closure For Above Transition " <<endl;
-                //print_set(epsilson_trans_ids);
+                cout << "Transition Found for Symbol " << *symbol << endl;
+                print_set(newStateIds);
+                cout << "Epsilon Closure For Above Transition " <<endl;
+                print_set(epsilson_trans_ids);
                 if(!newStateIds.empty()){
                     DFA_trans newState;
                     newState.vertex_start = currentStateIds;
                     newState.vertex_end = epsilson_trans_ids;
                     newState.renamed_vertex_start = get_d_state_id(currentStateIds); //TODO Get a way to get the new Renamed DFA Counter.
                     newState.renamed_vertex_end = get_d_state_id(epsilson_trans_ids);
-                    //cout << "Transition Marked From " <<newState.renamed_vertex_start << " TO " <<newState.renamed_vertex_end << endl;
+                    cout << "Transition Marked From " <<newState.renamed_vertex_start << " TO " <<newState.renamed_vertex_end << endl;
                     newState.trans_symbol = *symbol;
                     dfa_transtions.push_back(newState);
                 }
             }
-        //cout <<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+        cout <<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
         }while(any_umarked_states());
         
         //cout << "The Final State of the NFA is :" << get_final_state() << endl;
@@ -462,8 +462,10 @@ public:
     //DFA Building Function
     //Takes a Set of States and Returns the States that can be reached via Epsilon transitions for each of those Individual states
     set<int> epsilon_closure(set<int>states){
-        set<int> epsilonReachableStates;
-        for (set<int>::iterator it = states.begin(); it != states.end(); ++it) {
+        //Currently state transitions are only taking place from startStates to states directly reached via epsilon from that state.
+        //Epsilon transitons from states which have epsilon trans from those states were not considered ealier.
+        set<int> epsilonReachableStates = states;
+        for (set<int>::iterator it = epsilonReachableStates.begin(); it != epsilonReachableStates.end(); ++it) {
             vector<trans>::iterator node_ptr;
             for(node_ptr = nfa_node_graph[*it].begin();node_ptr< nfa_node_graph[*it].end();node_ptr++){
                 if(node_ptr->symbol == EPSILON_TRANSITION){
@@ -471,7 +473,6 @@ public:
                 }
             }
         }
-        epsilonReachableStates.insert(states.begin(),states.end());
         return epsilonReachableStates;
     }
 
@@ -831,9 +832,6 @@ string convertRegexToPostfix(string expression) {
     }
     return output;
 }
-//TODO: Create base NFA constructions for Kleene star
-
-//TODO : Once the final NFA is constructed from postfix expression --> Either Convert that To DFA or Try and run the string matching in this NFA.
 
 int main(int argc, char* argv[])
 {
