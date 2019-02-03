@@ -3,7 +3,8 @@
         "iosfwd": "cpp",
         "fstream": "cpp",
         "iostream": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "string": "cpp"
     },
     "C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: WebKit, AllowShortFunctionsOnASingleLine: None, ReflowComments: false, BreakBeforeBraces: Attach}"
 }
