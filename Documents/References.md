@@ -68,3 +68,4 @@
 22. [Thompson's Construction With C++](https://github.com/kennyledet/Algorithm-Implementations/tree/master/Thompsons_Construction_Algorithm/C%2B%2B/AlexMathew)  
 23. [The Practice of Programming by *Brian W. Kernighan*](http://index-of.co.uk/Etc/The.Practice.of.Programming.-.B.W..Kernighan..pdf)
 24. [Beautiful Code *(O'Reilly)*](http://shop.oreilly.com/product/9780596510046.do)
+25. [Subset Construction From NFA](http://www.cs.may.ie/staff/jpower/Courses/Previous/parsing/node9.html)
