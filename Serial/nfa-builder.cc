@@ -253,8 +253,8 @@ public:
         do{
             set<int> currentStateIds = get_unmarked_state(); // This Method Also marks that StateId
             //Mark The State Here.
-            cout <<"---------------------------------------------------------" << endl;
-            cout << "Marking State Transitions for The Following : "<<endl;
+           // cout <<"---------------------------------------------------------" << endl;
+            //cout << "Marking State Transitions for The Following : "<<endl;
             print_set(currentStateIds);
             for (set<string>::iterator symbol=alphabet.begin();symbol != alphabet.end();++symbol) {
                 set<int> newStateIds = move(currentStateIds,*symbol);
@@ -264,25 +264,25 @@ public:
                         insert_to_d_states(epsilson_trans_ids);
                     }
                 }
-                cout << "Transition Found for Symbol " << *symbol << endl;
-                print_set(newStateIds);
-                cout << "Epsilon Closure For Above Transition " <<endl;
-                print_set(epsilson_trans_ids);
+                //cout << "Transition Found for Symbol " << *symbol << endl;
+               // print_set(newStateIds);
+                //cout << "Epsilon Closure For Above Transition " <<endl;
+                //print_set(epsilson_trans_ids);
                 if(!newStateIds.empty()){
                     DFA_trans newState;
                     newState.vertex_start = currentStateIds;
                     newState.vertex_end = epsilson_trans_ids;
                     newState.renamed_vertex_start = get_d_state_id(currentStateIds); //TODO Get a way to get the new Renamed DFA Counter.
                     newState.renamed_vertex_end = get_d_state_id(epsilson_trans_ids);
-                    cout << "Transition Marked From " <<newState.renamed_vertex_start << " TO " <<newState.renamed_vertex_end << endl;
+                    //cout << "Transition Marked From " <<newState.renamed_vertex_start << " TO " <<newState.renamed_vertex_end << endl;
                     newState.trans_symbol = *symbol;
                     dfa_transtions.push_back(newState);
                 }
             }
-        cout <<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+        //cout <<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
         }while(any_umarked_states());
         
-        cout << "The Final State of the NFA is :" << get_final_state() << endl;
+        //cout << "The Final State of the NFA is :" << get_final_state() << endl;
         //Set the Final States Here.
         for(vector<DFA_trans_mark>::iterator ptr=Dstates.begin();ptr < Dstates.end();ptr++){
             //cout << "evaluating the DFA Vertex " << ptr->renamed_vertex_id << endl;
@@ -297,7 +297,7 @@ public:
                 }
             }
         }
-        cout << "DFA Is Constructed With NodeS : " << endl;
+        //cout << "DFA Is Constructed With NodeS : " << endl;
         
     }
 
@@ -337,20 +337,19 @@ public:
     vector<matched_symbol> traverse_dfa_graph(string text, string buffer, int currentCharPosition, int currentState, vector<matched_symbol> symbols) {
         //Crossed the Length of the String so Return back to the main function.
         if (currentCharPosition >= text.length()) {
-            cout << "Reached The End of Chars " << symbols.size() << endl;
+            //cout << "Reached The End of Chars " << symbols.size() << endl;
             return symbols;
         }
         string token = string(1, text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated.
         if (check_for_dfa_final_state(currentState)) {
-            //TODO/DOUBT : Should I add the strings here and store it is the mapped_symbol Vector Arr or should it be done when the currentState == final_state.
-            cout << "Adding Buffer to Matched Symbols " << buffer << endl;
-            cout << endl;
-            matched_symbol symbol;
-            symbol.start_position = currentCharPosition;
-            symbol.token = buffer;
-            symbols.push_back(symbol);
+            if(buffer != ""){
+                matched_symbol symbol;
+                symbol.start_position = currentCharPosition;
+                symbol.token = buffer;
+                symbols.push_back(symbol);
+            }
         }
-        cout << "Evaluating Symbol :" << token << " " << "On State : " << currentState << " With Buffer: " << buffer << endl;
+        //cout << "Evaluating Symbol :" << token << " " << "On State : " << currentState << " With Buffer: " << buffer << endl;
         //Available Transitions from the current Node.
         dfa_graph_trans available_transtion = available_dfa_state_transitions(currentState, token);
 
@@ -359,11 +358,16 @@ public:
                 int newCharPosition = ++currentCharPosition;;
                 buffer += token;
                 int newState = available_transtion.destination;
-                cout << "Traversing To Destination : " << available_transtion.destination << " With the Symbol :" << available_transtion.symbol << endl;
+                //cout << "Traversing To Destination : " << available_transtion.destination << " With the Symbol :" << available_transtion.symbol << endl;
                 return traverse_dfa_graph(text, buffer, newCharPosition, newState, symbols);
         } else {
+            
+            int newCharPosition = currentCharPosition;
+            //This is done Because a string can match at a state is and stop matching at another state which may be the final state.
+            if(currentState ==0){
+                 newCharPosition = ++currentCharPosition;
+            }
             //Reset the state back to 0 So that New characters can be traversed through this.
-            int newCharPosition = ++currentCharPosition;
             int newStartState = 0;
             string newBuffer = "";
             return traverse_dfa_graph(text, newBuffer, newCharPosition, newStartState, symbols);
@@ -740,7 +744,21 @@ string changeRegexOperators(string regex){
             replacedRegex +=(regex[i]);
             replacedRegex +=('+');
         }else{
-            replacedRegex+= regex[i];
+            if(isOperator(regex[i])){
+                if(i!=regex.length()-1){
+                    if(isOperand(regex[i+1]) && !checkBinaryOperation(regex[i])){
+                        replacedRegex+= regex[i];
+                        replacedRegex+= '+';
+                    }else{
+                        replacedRegex+= regex[i];
+                    }
+                }else{
+                    replacedRegex+= regex[i];
+                }
+                //TODO : Figure the concatentation Operator for something like an l*b
+            }else{
+                replacedRegex+= regex[i];
+            }
         } 
     }
     return replacedRegex;
