@@ -63,7 +63,7 @@
 17. [Pointers vs. References in C++](https://stackoverflow.com/questions/57483/what-are-the-differences-between-a-pointer-variable-and-a-reference-variable-in)
 18. [Building NFAs with Thompson Construction](https://xysun.github.io/posts/regex-parsing-thompsons-algorithm.html#)
 19. [Building Regex Machine with NFAs](https://medium.com/@DmitrySoshnikov/building-a-regexp-machine-part-2-finite-automata-nfa-fragments-5a7c5c005ef0)
-20. [Thompson Construction For Converting DFA to NFA](https://studylib.net/doc/5870948/the-subset-construction-algorithm)
+20. [Subset Construction For Converting DFA to NFA](https://studylib.net/doc/5870948/the-subset-construction-algorithm)
 21. [Regex Engine In Python For Thompson Construction](https://github.com/xysun/regex)
 22. [Thompson's Construction With C++](https://github.com/kennyledet/Algorithm-Implementations/tree/master/Thompsons_Construction_Algorithm/C%2B%2B/AlexMathew)  
 23. [The Practice of Programming by *Brian W. Kernighan*](http://index-of.co.uk/Etc/The.Practice.of.Programming.-.B.W..Kernighan..pdf)
