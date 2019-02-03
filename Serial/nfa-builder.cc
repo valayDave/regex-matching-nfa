@@ -115,41 +115,33 @@ public:
         vector<matched_symbol> symbols;
         symbols = traverse_graph(text,"",0,0,false,symbols);
         //This will be the Method through which the state transitions will happen.
-
-        // The Nodes in an NFA can be visulised as a graph where one can iterate through the graph.
-
+        //The Nodes in an NFA can be visulised as a graph where one can iterate through the graph.
         //Start from the 0th Node and check take each character and see if it is going to the other States. 
-        
-        //Take Epsilon transitions to reach other states and and then to th
-
+        //Take Epsilon transitions to reach other states =
         //Or DFA Can be constructed from this. Once DFA is constructed traverse its's Nodal Graph to reach other states that address each token
-
-            //TODO : Psuedo Code : --> Still Incomplete. Need to Figure if recursion is the answer or something else.  
-                //state = 0;
-                //buffer = "";
-                //for each token t 
-                    //if state_trans_available(state,t) 
-                        //new_state =  move(state,transition_symbol) --> this yeilds next state
-                        //buffer+=t;
-                        //if new_state ==  is_final_state(state)
-                            // print buffer , column number etc.
-                            // buffer = "" --> reset the buffer. 
-                            //if   
-                    //else 
-                        //continue;
         return symbols;
     }
 
     //DOUBT : CAN EPSILON LOOPING BE A PROBLEM --> This Literally Just Traverses the State Machine. --> May it be NFA or DFA.
-    //This function Evaluates a path from a current Node to the Other possible Nodes and finds if that path is going to have any 
+    /**
+     * <summary>
+     * This function Evaluates a path from a current Node to the Other possible Nodes and finds if that path is going to reach the Final state
+     * .If it reaches the final State then it will store the values in the symbols vector. 
+     * </summary>
+     * <param name="text">The actual Text on which the Regex needs to be evaluated</param>
+     * <param name="buffer"> The buffer in which the past characters that got traversed through the states are stored</param>
+     * <param name="currentCharPosition">The position of the character in the text that is being evaluated</param>
+     * <param name="currentState">The Current state in the graph that from which the traversal will be done.</param>
+     * <param name="cameViaEpsilon">If a transtion took place via Epsilon then the transition this is used to evaluate if the token being assed should be added to the buffer or not.</param>
+     * <param name="symbols">The Vector which will hold all the matched Symbols it from using this NFA.</param>
+     * <returns name="symbols"> The vector Of the matched_symbols</returns>
+     * */ 
     vector<matched_symbol> traverse_graph(string text,string buffer,int currentCharPosition,int currentState,bool cameViaEpsilon,vector<matched_symbol>symbols){
         //Crossed the Length of the String so Return back to the main function.
         if(currentCharPosition>=text.length()){
             //cout << "Reached The End of Chars " << symbols.size() << endl;
             return symbols;
-        }
-        string token = string(1,text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated. 
-
+        } 
         if (check_for_final_state(currentState)) {
             //TODO/DOUBT : Should I add the strings here and store it is the mapped_symbol Vector Arr or should it be done when the currentState == final_state.
             //cout << "Adding Buffer to Matched Symbols " << buffer << endl;
@@ -159,6 +151,7 @@ public:
             symbol.token = buffer;
             symbols.push_back(symbol);
         }
+        string token = string(1,text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated.
         if(!cameViaEpsilon){
             buffer+=token; // TODO : Evaluate Weather this line is correct or not.
         }
@@ -181,7 +174,7 @@ public:
                 return traverse_graph(text, buffer, newCharPosition, newState,epsilon,symbols);
             }
         } else {
-            //TODO : Need to Figure what we need to do.
+            //Reset the state back to 0 So that New characters can be traversed through this.
             int newCharPosition = ++currentCharPosition;
             int newStartState = 0;
             string newBuffer = "";
@@ -198,12 +191,9 @@ public:
         }
         return false;
     }
-
-    void tranverse_path(){
-        
-    }
 };
 
+//Create Base NFA constructions for Concatenation
 NFA concatNFAs(NFA a,NFA b){
     NFA result;
     //Set Total Vertices.
@@ -447,8 +437,6 @@ string convertRegexToPostfix(string expression) {
 //TODO: Create base NFA constructions for Kleene star
 
 //TODO: Create Base NFA constructions for Union
-
-//TODO:Create Base NFA constructions for Concatenation
 
 //TODO : Create a RE to NFA function that Takes the regular Expression converts it into a post fix operation and then constructs the NFA's from the Regex
 
