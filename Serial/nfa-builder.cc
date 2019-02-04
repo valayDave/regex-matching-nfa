@@ -141,30 +141,6 @@ public:
       return final_state;
     }
 
-    vector<trans> available_state_transitions(int state, string transition_symbol){
-        vector<trans> available_transitions;
-        vector<trans>::iterator state_ptr;
-        for(state_ptr=nfa_node_graph[state].begin();state_ptr<nfa_node_graph[state].end();state_ptr++){
-            //State Has an Allowed Transtion or An Epsilon Transtion than send that to the available transtions.
-            if(state_ptr->symbol == transition_symbol || state_ptr->symbol == EPSILON_TRANSITION){
-                available_transitions.push_back(*state_ptr);
-            }
-        }
-        return available_transitions;
-    }
-
-    vector<matched_symbol> match_string(string text) {
-        construct_nfa_graph();
-        vector<matched_symbol> symbols;
-        symbols = traverse_graph(text,"",0,0,symbols);
-        //This will be the Method through which the state transitions will happen.
-        //The Nodes in an NFA can be visulised as a graph where one can iterate through the graph.
-        //Start from the 0th Node and check take each character and see if it is going to the other States. 
-        //Take Epsilon transitions to reach other states =
-        //Or DFA Can be constructed from this. Once DFA is constructed traverse its's Nodal Graph to reach other states that address each token
-        return symbols;
-    }
-
     bool check_for_final_state(int state){
         vector<int>::iterator ptr;
         for(ptr=final_states.begin();ptr< final_states.end();ptr++){
@@ -175,57 +151,6 @@ public:
         return false;
     }
 
-    
-    vector<matched_symbol> traverse_graph(string text,string buffer,int currentCharPosition,int currentState,vector<matched_symbol>symbols){
-        //Crossed the Length of the String so Return back to the main function.
-        if(currentCharPosition>=text.length()){
-            cout << "Reached The End of Chars " << symbols.size() << endl;
-            return symbols;
-        } 
-        string token = string(1,text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated.
-        if (check_for_final_state(currentState)) {
-            //TODO/DOUBT : Should I add the strings here and store it is the mapped_symbol Vector Arr or should it be done when the currentState == final_state.
-            cout << "Adding Buffer to Matched Symbols " << buffer << endl;
-            cout << endl;
-            matched_symbol symbol;
-            symbol.start_position = currentCharPosition;
-            symbol.token = buffer;
-            symbols.push_back(symbol);
-        }
-        
-        // if(!cameViaEpsilon){
-        //     buffer+=token; // TODO : Evaluate Weather this line is correct or not.
-        // }
-        cout << "Evaluating Symbol :" <<token << " "  << "On State : " << currentState << " With Buffer: " << buffer << endl;
-        //Available Transitions from the current Node. 
-        vector<trans> available_transtions = available_state_transitions(currentState,token);
-
-        if (available_transtions.size() > 0) {
-            cout << "Available Transtions :" << available_transtions.size() << endl;
-            // If one of the available transtions is a Final State then We need to print the Token we have found.
-            for (int i = 0; i < available_transtions.size(); i++) {
-                trans newTranstion =available_transtions.at(i);
-                int newCharPosition = currentCharPosition;
-                if(newTranstion.symbol != EPSILON_TRANSITION){
-                    buffer+=token;
-                    newCharPosition = ++currentCharPosition;
-                }
-                int newState = newTranstion.destination ;
-                cout << "Traversing To Destination : " << newTranstion.destination << " With the Symbol :" << newTranstion.symbol << endl;
-                return traverse_graph(text, buffer, newCharPosition, newState,symbols);
-                //vector<matched_symbol> newMatchedSymbols = traverse_graph(text, buffer, newCharPosition, newState,epsilon,symbols);
-              //  symbols.insert(symbols.end(),newMatchedSymbols.begin(),newMatchedSymbols.end());
-            }
-            //return symbols;
-        } else {
-            //Reset the state back to 0 So that New characters can be traversed through this.
-            int newCharPosition = ++currentCharPosition;
-            int newStartState = 0;
-            string newBuffer = "";
-            return traverse_graph(text, newBuffer, newCharPosition, newStartState,symbols);
-        }
-    }
-
     //-------------------------------------------------------------------------------------------------------------------------------------------------
     
     //-----------------------------------DFA BUILDING METHODS----------------------------------------------------------------
@@ -234,50 +159,38 @@ public:
     void convert_to_dfa(){
         construct_nfa_graph();
         construct_alphabet();
-        set<int> set_of_states(vertices.begin(),vertices.end());
         set<int> start_state;start_state.insert(0);
+        //Take Epsilon Closure of 0 State.
         set<int> start_states = epsilon_closure(start_state);
         insert_to_d_states(start_states);
+        //Subset Construction Algorithm From an NFA.
         do{
             set<int> currentStateIds = get_unmarked_state(); // This Method Also marks that StateId
-            //Mark The State Here.
-            //cout <<"---------------------------------------------------------" << endl;
-            //cout << "Marking State Transitions for The Following : "<<endl;
-            //print_set(currentStateIds);
             for (set<string>::iterator symbol=alphabet.begin();symbol != alphabet.end();++symbol) {
+                //Perform the Move Operation to find the Reachable Nodes.
                 set<int> newStateIds = move(currentStateIds,*symbol);
+                //Perform Epsilon Closure of the move OP to create the consequent state in the DFA.
                 set<int> epsilson_trans_ids = epsilon_closure(newStateIds);
                 if(!epsilson_trans_ids.empty()){
                     if(is_new_dfa_state(epsilson_trans_ids)){
                         insert_to_d_states(epsilson_trans_ids);
                     }
                 }
-                // cout << "Transition Found for Symbol " << *symbol << endl;
-                // print_set(newStateIds);
-                // cout << "Epsilon Closure For Above Transition " <<endl;
-                // print_set(epsilson_trans_ids);
                 if(!newStateIds.empty()){
                     DFA_trans newState;
                     newState.vertex_start = currentStateIds;
                     newState.vertex_end = epsilson_trans_ids;
                     newState.renamed_vertex_start = get_d_state_id(currentStateIds); //TODO Get a way to get the new Renamed DFA Counter.
                     newState.renamed_vertex_end = get_d_state_id(epsilson_trans_ids);
-                    // cout << "Transition Marked From " <<newState.renamed_vertex_start << " TO " <<newState.renamed_vertex_end << endl;
                     newState.trans_symbol = *symbol;
                     dfa_transtions.push_back(newState);
                 }
             }
-        // cout <<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
         }while(any_umarked_states());
-        
-        //cout << "The Final State of the NFA is :" << get_final_state() << endl;
         //Set the Final States Here.
         for(vector<DFA_trans_mark>::iterator ptr=Dstates.begin();ptr < Dstates.end();ptr++){
-            //cout << "evaluating the DFA Vertex " << ptr->renamed_vertex_id << endl;
-            //print_set(ptr->vertex);
             dfa_states.insert(ptr->renamed_vertex_id);
             for(set<int>::iterator state_ptr = ptr->vertex.begin();state_ptr != ptr->vertex.end();++state_ptr){
-                //cout << "Checking For FS in Vertex Set with :" << *state_ptr << " " <<check_for_final_state(*state_ptr)<< endl;
                 if(check_for_final_state(*state_ptr)){
                     //Add the Name of the Renamed VertexIds to the Vertex of final state
                     dfa_final_states.push_back(ptr->renamed_vertex_id);
@@ -285,8 +198,6 @@ public:
                 }
             }
         }
-        //cout << "DFA Is Constructed With NodeS : " << endl;
-        
     }
 
     void construct_dfa_graph(){
@@ -315,7 +226,8 @@ public:
         return available_transition;
     }
 
-    vector<matched_symbol> match_string_with_dfa(string text) {
+    //String Matching Algorithm Using the DFA Graph.
+    vector<matched_symbol> match_string(string text) {
         construct_dfa_graph();
         vector<matched_symbol> symbols;
         symbols = traverse_dfa_graph(text,"",0,0,symbols);
@@ -337,7 +249,6 @@ public:
     vector<matched_symbol> traverse_dfa_graph(string text, string buffer, int currentCharPosition, int currentState, vector<matched_symbol> symbols) {
         //Crossed the Length of the String so Return back to the main function.
         if (currentCharPosition >= text.length()) {
-            //cout << "Reached The End of Chars " << symbols.size() << endl;
             return symbols;
         }
         string token = string(1, text[currentCharPosition]); //Token is the Individual Character that needs to be evaluated.
@@ -349,19 +260,15 @@ public:
                 symbols.push_back(symbol);
             }
         }
-        //cout << "Evaluating Symbol :" << token << " " << "On State : " << currentState << " With Buffer: " << buffer << endl;
         //Available Transitions from the current Node.
         dfa_graph_trans available_transtion = available_dfa_state_transitions(currentState, token);
-
         if (available_transtion.trans_found) { // available_transtion.trans_found initialised when the graph is created.
             // If one of the available transtions is a Final State then We need to print the Token we have found.
                 int newCharPosition = ++currentCharPosition;;
                 buffer += token;
                 int newState = available_transtion.destination;
-                //cout << "Traversing To Destination : " << available_transtion.destination << " With the Symbol :" << available_transtion.symbol << endl;
                 return traverse_dfa_graph(text, buffer, newCharPosition, newState, symbols);
         } else {
-            
             int newCharPosition = currentCharPosition;
             //This is done Because a string can match at a state is and stop matching at another state which may be the final state.
             if(currentState ==0){
@@ -382,10 +289,6 @@ public:
             }
         }
         return false;
-    }
-
-    vector<int> get_dfa_final_state(){
-
     }
 
     //Gets the New Vertex IDs of the DFA 
@@ -463,7 +366,7 @@ public:
     //Takes a Set of States and Returns the States that can be reached via Epsilon transitions for each of those Individual states
     set<int> epsilon_closure(set<int>states){
         //Currently state transitions are only taking place from startStates to states directly reached via epsilon from that state.
-        //Epsilon transitons from states which have epsilon trans from those states were not considered ealier.
+        //Epsilon transitons from states which have further epsilon trans from those states were not considered ealier. Added as the tweek to correct the algorithm.
         set<int> epsilonReachableStates = states;
         for (set<int>::iterator it = epsilonReachableStates.begin(); it != epsilonReachableStates.end(); ++it) {
             vector<trans>::iterator node_ptr;
@@ -494,6 +397,7 @@ public:
     //---------------------------------------------------------------------------------------------------
 };
 
+//UTILITY FN
 void print_set(set<int> a){
     for(set<int>::iterator itr=a.begin();itr != a.end();++itr){
         cout << *itr << " ";
@@ -585,7 +489,7 @@ NFA KleeneNFA(NFA a){
 }
 
 //This is to Print the Entire NFA so that There is some Reference on what is getting Constructed 
-void printNFA(NFA a){
+void printNFA(NFA a){//UTILITY FN
     transition tran;
     cout << '\n';
     for(int i=0;i<a.node_trans.size();i++){
@@ -595,7 +499,7 @@ void printNFA(NFA a){
     cout<<"\nThe final state is q"<<a.get_final_state()<<endl;
 }
 
-void printDFA(NFA a){
+void printDFA(NFA a){//UTILITY FN
     DFA_trans tran;
     cout << '\n';
     for(int i=0;i<a.dfa_transtions.size();i++){
@@ -603,7 +507,6 @@ void printDFA(NFA a){
         cout<<"q"<<tran.renamed_vertex_start<<" --> q"<<tran.renamed_vertex_end<<" : Symbol - "<<tran.trans_symbol<<endl;    
     }
     cout<< "\n The final state are " <<a.dfa_final_states.size() <<endl;
-    
     if(a.dfa_final_states.size() > 0){
         for(int i=0;i<a.dfa_final_states.size();i++){
             cout << "q" << a.dfa_final_states.at(i) << " ";
@@ -626,7 +529,6 @@ NFA postFixNFABuilder(string postFixExpr){
     for(int i=0;i<postFixExpr.length();i++){
         if(isOperand(postFixExpr[i])){
             NFA operand = createSingleSymbolNFA(postFixExpr[i]);
-            //printNFA(operand);
             evaluationStack.push(operand);
         }else{ // It is an Operator
             if(checkBinaryOperation(postFixExpr[i])){ 
@@ -754,7 +656,6 @@ string changeRegexOperators(string regex){
                 }else{
                     replacedRegex+= regex[i];
                 }
-                //TODO : Figure the concatentation Operator for something like an l*b
             }else{
                 replacedRegex+= regex[i];
             }
@@ -772,7 +673,7 @@ void searchFile(NFA regexEvaluator, string fileName) {
     file.open(filePath.c_str());
     if (file.is_open()) {
         while (getline(file, line)) {
-            vector<matched_symbol> indexMatches = regexEvaluator.match_string_with_dfa(line);
+            vector<matched_symbol> indexMatches = regexEvaluator.match_string(line);
             if (!indexMatches.empty()) {
                 for (int i = 0; i < indexMatches.size(); i++) {
                     printOutput(fileName, lineNumber, indexMatches.at(i).start_position, indexMatches.at(i).token);
@@ -798,7 +699,7 @@ string convertRegexToPostfix(string expression) {
     // Only Operators(+ or *) will have a single Character Operand Unless
     // Otherwise. Concatenated Strings stored togather.
     string output;
-    cout << "Starting Post Fix Notation " + expression << endl;
+    //cout << "Starting Post Fix Notation " + expression << endl;
     // Convert the expression From an Infix Notation to a Post Fix notation.
     for (int i = 0; i < expression.length(); i++) {
         if (isOperand(expression[i])) {
@@ -830,8 +731,7 @@ string convertRegexToPostfix(string expression) {
     return output;
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
     // Arguement 0 is the Name of the Binary so it is ignored.
     // First Arguement of the function is a regex to be Found Within the File.
     string regularExpression = argv[1];
@@ -842,20 +742,11 @@ int main(int argc, char* argv[])
     // Vectors.
     for (int i = 2; i < argc; i++) {
         fileNames.push_back(argv[i]);
-        // cout << argv[i] << endl;
     }
     string newRegex = changeRegexOperators(regularExpression);
-
     string postfixRegex = convertRegexToPostfix(newRegex);
-    cout << "Post Fix Regex : "<< postfixRegex << endl;
-
     NFA resultantNFA = postFixNFABuilder(postfixRegex);
-    
-    //printNFA(resultantNFA);
-
     resultantNFA.convert_to_dfa();
-    
-    //printDFA(resultantNFA);
     for(int i=0;i<fileNames.size();i++){
         searchFile(resultantNFA,fileNames.at(i));
     }
