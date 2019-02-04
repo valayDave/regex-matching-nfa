@@ -55,7 +55,7 @@ struct graph_state{
     string buffer;
 };
 
-string DEFAULT_FILE_PATH = "Files/";
+string DEFAULT_FILE_PATH = "";
 string EPSILON_TRANSITION = "\u03B5";
 
 bool isOperand(char c);
