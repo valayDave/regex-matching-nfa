@@ -24,7 +24,7 @@
 - `class NFA` : Contains Methods to create an NFA and a DFA from any NFA. 
 - `struct transition` : stucture that represents the transiton between the nodes of the automaton. It contains the starting and ending edge and the symbol of transition.
 - `vector<transtion>` : Vector containing the infomation needed to construct the node graph of the Automaton.
-- `vector< vector<trans> > nfa_node_graph` : actual graph used for Traversing the Tree. 
+- `vector< vector<trans> > dfa_node_graph` : actual graph used for Traversing the Tree. 
 - `struct matched_symbol` : The structure that stores the matched tokens and postion of matched tokens from the text on which the search takes place. 
 
 ## Algorithms 
