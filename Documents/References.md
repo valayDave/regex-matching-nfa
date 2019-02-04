@@ -42,7 +42,7 @@
 - Finally after reading a lot online and in Books *Beautiful Code* and *The Practice of Programming by Brian W. Kernighan* I realised that the most optimal solution will come by using NFA' and DFA's.
 
 
-# REFERENCES 
+## REFERENCES 
 
 1. [C++ Best Practices](https://github.com/lefticus/cppbestpractices)
 2. [Ways to Create String Arrays](https://www.geeksforgeeks.org/array-strings-c-3-different-ways-create/)
@@ -69,3 +69,6 @@
 23. [The Practice of Programming by *Brian W. Kernighan*](http://index-of.co.uk/Etc/The.Practice.of.Programming.-.B.W..Kernighan..pdf)
 24. [Beautiful Code *(O'Reilly)*](http://shop.oreilly.com/product/9780596510046.do)
 25. [Subset Construction From NFA](http://www.cs.may.ie/staff/jpower/Courses/Previous/parsing/node9.html)
+
+## Author 
+ - [Valay Dave](<vddave@asu.edu>)
