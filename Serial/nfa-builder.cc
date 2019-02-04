@@ -670,13 +670,15 @@ void searchFile(NFA regexEvaluator, string fileName) {
     string filePath = DEFAULT_FILE_PATH + fileName;
     ifstream file;
     string line;
-    file.open(filePath.c_str());
+    file.open(filePath.c_str());    
     if (file.is_open()) {
         while (getline(file, line)) {
-            vector<matched_symbol> indexMatches = regexEvaluator.match_string(line);
-            if (!indexMatches.empty()) {
-                for (int i = 0; i < indexMatches.size(); i++) {
-                    printOutput(fileName, lineNumber, indexMatches.at(i).start_position, indexMatches.at(i).token);
+            if(line.length() != 0){
+                vector<matched_symbol> indexMatches = regexEvaluator.match_string(line);
+                if (!indexMatches.empty()) {
+                    for (int i = 0; i < indexMatches.size(); i++) {
+                        printOutput(fileName, lineNumber, indexMatches.at(i).start_position, indexMatches.at(i).token);
+                    }
                 }
             }
             lineNumber++;
