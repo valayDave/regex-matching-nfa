@@ -7,7 +7,7 @@ Program Status
 -   Concatenation : `ab`
 -   Union : `a+b`
 -   Kleene Start : `a*`
--   Parenthesis based mixed Operators : `(l*o)+(o*)`
+-   Parentesis based mixed Operators : `(l*o)+(o*)`
 
 ### Bugs
 
@@ -43,7 +43,7 @@ Data Structures
     and the symbol of transition.
 -   `vector<transtion>` : Vector containing the infomation needed to
     construct the node graph of the Automaton.
--   `vector< vector<trans> > nfa_node_graph` : actual graph used for
+-   `vector< vector<trans> > dfa_node_graph` : actual graph used for
     Traversing the Tree.
 -   `struct matched_symbol` : The structure that stores the matched
     tokens and postion of matched tokens from the text on which the
@@ -86,7 +86,7 @@ Interactions and Citations
     the most optimal solution will come by using NFA' and DFA's.
 
 REFERENCES
-==========
+----------
 
 1.  [C++ Best Practices](https://github.com/lefticus/cppbestpractices)
 2.  [Ways to Create String
@@ -134,4 +134,9 @@ REFERENCES
     *(O'Reilly)*](http://shop.oreilly.com/product/9780596510046.do)
 25. [Subset Construction From
     NFA](http://www.cs.may.ie/staff/jpower/Courses/Previous/parsing/node9.html)
+
+Author
+------
+
+-   [Valay Dave](vddave@asu.edu)
 
