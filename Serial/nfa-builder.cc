@@ -638,16 +638,19 @@ string changeRegexOperators(string regex){
             continue;
         }else if (regex[i] =='+'){
             replacedRegex += '|';
-        }else if(isOperand(regex[i]) && isOperand(regex[i-1])){
+        }else if(isOperand(regex[i]) && isOperand(regex[i-1])){ // eg : "aa"
             replacedRegex +=('+');
             replacedRegex +=(regex[i]);
-        }else if(regex[i] == ')' && (regex[i+1]=='(' || isOperand(regex[i+1]))){
+        }else if(regex[i] == ')' && (regex[i+1]=='(' || isOperand(regex[i+1]))){ // eg1 : ")a"  eg2 : ")("
+            replacedRegex +=(regex[i]);
+            replacedRegex +=('+');
+        }else if(isOperand(regex[i]) && regex[i+1] =='(' ){ //eg :"r("
             replacedRegex +=(regex[i]);
             replacedRegex +=('+');
         }else{
             if(isOperator(regex[i])){
                 if(i!=regex.length()-1){
-                    if(isOperand(regex[i+1]) && !checkBinaryOperation(regex[i])){
+                    if(isOperand(regex[i+1]) && !checkBinaryOperation(regex[i])){ //eg: "*w"
                         replacedRegex+= regex[i];
                         replacedRegex+= '+';
                     }else{
@@ -657,7 +660,12 @@ string changeRegexOperators(string regex){
                     replacedRegex+= regex[i];
                 }
             }else{
-                replacedRegex+= regex[i];
+                if(regex[i] =='(' && isOperand(regex[i-1])){ //eg : "r("
+                    replacedRegex +=('+');
+                    replacedRegex +=(regex[i]);
+                }else{
+                    replacedRegex+= regex[i];                
+                }
             }
         } 
     }
