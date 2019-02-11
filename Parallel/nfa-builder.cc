@@ -224,6 +224,7 @@ public:
             //State Has an Allowed Transtion or An Epsilon Transtion than send that to the available transtions.
             if (state_ptr->symbol == transition_symbol) {
                 available_transition = *state_ptr;
+                return available_transition;
             }
         }
         return available_transition;
