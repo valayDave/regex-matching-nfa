@@ -5,6 +5,7 @@
 #include <stack>
 #include <stdlib.h>
 #include <string>
+#include <omp.h>
 #include <chrono>
 using namespace std;
 
@@ -199,7 +200,7 @@ public:
                 }
             }
         }
-        construct_dfa_graph();
+        construct_dfa_graph(); // Changed as DFA Graph Needs to only be constructed once. 
     }
 
     void construct_dfa_graph(){
@@ -685,8 +686,14 @@ void searchFile(NFA regexEvaluator, string fileName) {
             if(line.length() != 0){
                 vector<matched_symbol> indexMatches = regexEvaluator.match_string(line);
                 if (!indexMatches.empty()) {
-                    for (int i = 0; i < indexMatches.size(); i++) {
-                        printOutput(fileName, lineNumber, indexMatches.at(i).start_position, indexMatches.at(i).token);
+                    int i = 0;
+                    int threadCount = static_cast<int>(indexMatches.size());
+#pragma omp parallel for schedule(dynamic,10) shared(indexMatches,lineNumber,fileName) num_threads(threadCount) //PARALLELISED : Printing of Individual Data in the File. 
+                    for (i = 0; i < indexMatches.size(); i++) { // Parallelising this Makes the program slower !.
+                        #pragma omp critical
+                        {
+                            printOutput(fileName, lineNumber, indexMatches.at(i).start_position, indexMatches.at(i).token);
+                        }
                     }
                 }
             }
@@ -758,14 +765,21 @@ int main(int argc, char* argv[]){
     for (int i = 2; i < argc; i++) {
         fileNames.push_back(argv[i]);
     }
-    string newRegex = changeRegexOperators(regularExpression);
-    string postfixRegex = convertRegexToPostfix(newRegex);
-    NFA resultantNFA = postFixNFABuilder(postfixRegex);
-    resultantNFA.convert_to_dfa();
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    for(int i=0;i<fileNames.size();i++){
+    string newRegex = changeRegexOperators(regularExpression); // Cannot Parallelise as State is important to be conservered. ---> Check if any OpenMp Directives Can help 
+    string postfixRegex = convertRegexToPostfix(newRegex);  // Cannot Parallelise as State is important to be conservered.
+    NFA resultantNFA = postFixNFABuilder(postfixRegex); // Cannot Parallelise as State is important to be conservered.
+    resultantNFA.convert_to_dfa(); // TODO : Probably Can parallelise this function.
+    int i=0;
+    int threads = static_cast<int>(fileNames.size());
+    cout << "Number of Threads to be Spawned :" << threads << endl;
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+
+//PARALLELISED : FILE Based PROCESSING
+#pragma omp parallel for schedule(dynamic) shared(fileNames,resultantNFA) num_threads(threads) 
+    for(i=0;i<fileNames.size();i++){ //TODO : Can Easily parallise this for loop. --> This Will Improve Performance When Number Of Files Increase.
+        cout << "VALUE OF I FOR THREAD : " << i << " " << omp_get_thread_num() << endl;
         searchFile(resultantNFA,fileNames.at(i));
-    }
+    } 
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     cout << "TIME TAKEN BY THE CODE : " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << endl;
 }
