@@ -699,7 +699,7 @@ void searchFile(NFA regexEvaluator, string fileName) {
 
 void printOutput(string fileName, int lineNumber, int startIndex,string patternMatched){
     if(patternMatched.length() == 1){
-        cout << fileName + ", " << lineNumber << ", " << startIndex -static_cast<int>(patternMatched.length()) << ", "<<  startIndex - static_cast<int>(patternMatched.length()) << ": "+patternMatched << endl;
+        cout << fileName + ", " << lineNumber << ", " << startIndex  << ", "<<  startIndex << ": "+patternMatched << endl;
     }else{
         cout << fileName + ", " << lineNumber << ", " << startIndex -static_cast<int>(patternMatched.length())+1 << ", " <<  startIndex << ": "+patternMatched << endl;
     }

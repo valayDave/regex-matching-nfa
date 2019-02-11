@@ -682,22 +682,34 @@ void searchFile(NFA regexEvaluator, string fileName) {
     string line;
     file.open(filePath.c_str());    
     if (file.is_open()) {
-        while (getline(file, line)) {
+        struct file_op{
+            string opLine;
+            int lineNum;
+        };
+        vector <file_op> fileOutput;
+        while (getline(file, line)) { // Place the full file inside a Vector. 
             if(line.length() != 0){
-                vector<matched_symbol> indexMatches = regexEvaluator.match_string(line);
-                if (!indexMatches.empty()) {
-                    int i = 0;
-                    int threadCount = static_cast<int>(indexMatches.size());
-#pragma omp parallel for schedule(dynamic,10) shared(indexMatches,lineNumber,fileName) num_threads(threadCount) //PARALLELISED : Printing of Individual Data in the File. 
-                    for (i = 0; i < indexMatches.size(); i++) { // Parallelising this Makes the program slower !.
-                        #pragma omp critical
-                        {
-                            printOutput(fileName, lineNumber, indexMatches.at(i).start_position, indexMatches.at(i).token);
-                        }
-                    }
-                }
+                file_op insertObj;
+                insertObj.lineNum = lineNumber;
+                insertObj.opLine = line;
+                fileOutput.push_back(insertObj);
             }
             lineNumber++;
+        }
+        vector<file_op>::iterator file_iterator;
+        int threadCount = static_cast<int>(fileOutput.size())/10;
+#pragma omp parallel for schedule(dynamic,5) shared(fileOutput,regexEvaluator,fileName) num_threads(5)        
+        for(file_iterator = fileOutput.begin();file_iterator < fileOutput.end();file_iterator++){
+            vector<matched_symbol> indexMatches = regexEvaluator.match_string(file_iterator->opLine);
+            if (!indexMatches.empty()) {
+                for (int i = 0; i < indexMatches.size(); i++) { // Parallelising this Makes the program slower !.
+                #pragma omp critical 
+                {
+                    printOutput(fileName, file_iterator->lineNum, indexMatches.at(i).start_position, indexMatches.at(i).token);
+
+                }
+                }
+            }
         }
     } else {
         cout << "File Didn't Open" << endl;
@@ -706,7 +718,7 @@ void searchFile(NFA regexEvaluator, string fileName) {
 
 void printOutput(string fileName, int lineNumber, int startIndex,string patternMatched){
     if(patternMatched.length() == 1){
-        cout << fileName + ", " << lineNumber << ", " << startIndex -static_cast<int>(patternMatched.length()) << ", "<<  startIndex - static_cast<int>(patternMatched.length()) << ": "+patternMatched << endl;
+        cout << fileName + ", " << lineNumber << ", " << startIndex << ", "<<  startIndex << ": "+patternMatched << endl;
     }else{
         cout << fileName + ", " << lineNumber << ", " << startIndex -static_cast<int>(patternMatched.length())+1 << ", " <<  startIndex << ": "+patternMatched << endl;
     }
