@@ -697,16 +697,19 @@ void searchFile(NFA regexEvaluator, string fileName) {
             lineNumber++;
         }
         vector<file_op>::iterator file_iterator;
+        int i=0;
         int threadCount = static_cast<int>(fileOutput.size())/10;
+        //for(file_iterator = fileOutput.begin();file_iterator < fileOutput.end();file_iterator++){
 #pragma omp parallel for schedule(dynamic,5) shared(fileOutput,regexEvaluator,fileName) num_threads(5)        
-        for(file_iterator = fileOutput.begin();file_iterator < fileOutput.end();file_iterator++){
-            vector<matched_symbol> indexMatches = regexEvaluator.match_string(file_iterator->opLine);
+        for(i=0;i<fileOutput.size();i++){   
+            file_op smLine = fileOutput.at(i);
+            vector<matched_symbol> indexMatches = regexEvaluator.match_string(smLine.opLine);
             if (!indexMatches.empty()) {
-                for (int i = 0; i < indexMatches.size(); i++) { // Parallelising this Makes the program slower !.
+                for (int j = 0; j < indexMatches.size(); j++) { // Parallelising this Makes the program slower !.
                 #pragma omp critical 
                 {
-                    printOutput(fileName, file_iterator->lineNum, indexMatches.at(i).start_position, indexMatches.at(i).token);
-
+                    cout << "Reading From Thread : " << omp_get_thread_num() << endl;
+                    printOutput(fileName, smLine.lineNum, indexMatches.at(j).start_position, indexMatches.at(j).token);
                 }
                 }
             }
