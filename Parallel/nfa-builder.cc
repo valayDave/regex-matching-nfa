@@ -706,11 +706,11 @@ void searchFile(NFA regexEvaluator, string fileName) {
             vector<matched_symbol> indexMatches = regexEvaluator.match_string(smLine.opLine);
             if (!indexMatches.empty()) {
                 for (int j = 0; j < indexMatches.size(); j++) { // Parallelising this Makes the program slower !.
-                #pragma omp critical 
-                {
                     cout << "Reading From Thread : " << omp_get_thread_num() << endl;
                     printOutput(fileName, smLine.lineNum, indexMatches.at(j).start_position, indexMatches.at(j).token);
-                }
+                // #pragma omp critical 
+                // {
+                // }
                 }
             }
         }
