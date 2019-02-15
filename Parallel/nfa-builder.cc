@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string>
 #include <omp.h>
+#include <chrono>
+
 using namespace std;
 
  struct file_op{
@@ -785,9 +787,12 @@ int main(int argc, char* argv[]){
     resultantNFA.convert_to_dfa(); // TODO : Probably Can parallelise this function.
     int i=0;
     int threads = static_cast<int>(fileNames.size());
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 //PARALLELISED : FILE Based PROCESSING
 #pragma omp parallel for schedule(dynamic) shared(fileNames,resultantNFA) num_threads(threads) 
     for(i=0;i<fileNames.size();i++){ //TODO : Can Easily parallise this for loop. --> This Will Improve Performance When Number Of Files Increase.
         searchFile(resultantNFA,fileNames.at(i));
     } 
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    cout << "TIME TAKEN BY THE CODE : " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << endl;
 }
