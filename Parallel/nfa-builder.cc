@@ -769,6 +769,7 @@ string convertRegexToPostfix(string expression) {
 }
 
 int main(int argc, char* argv[]){
+    omp_set_nested(1); // To Enable Nested Parallelism
     // Arguement 0 is the Name of the Binary so it is ignored.
     // First Arguement of the function is a regex to be Found Within the File.
     string regularExpression = argv[1];
