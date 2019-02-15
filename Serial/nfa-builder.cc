@@ -5,7 +5,6 @@
 #include <stack>
 #include <stdlib.h>
 #include <string>
-#include <chrono>
 using namespace std;
 
 struct DFA_trans{
@@ -763,10 +762,7 @@ int main(int argc, char* argv[]){
     string postfixRegex = convertRegexToPostfix(newRegex);
     NFA resultantNFA = postFixNFABuilder(postfixRegex);
     resultantNFA.convert_to_dfa();
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for(int i=0;i<fileNames.size();i++){
         searchFile(resultantNFA,fileNames.at(i));
     }
-    chrono::steady_clock::time_point end = chrono::steady_clock::now();
-    cout << "TIME TAKEN BY THE CODE : " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << endl;
 }
