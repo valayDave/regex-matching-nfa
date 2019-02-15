@@ -8,6 +8,10 @@
 #include <omp.h>
 using namespace std;
 
+ struct file_op{
+    string opLine;
+    int lineNum;
+};
 struct DFA_trans{
     set<int> vertex_start;
     set<int> vertex_end;
@@ -682,10 +686,6 @@ void searchFile(NFA regexEvaluator, string fileName) {
     string line;
     file.open(filePath.c_str());    
     if (file.is_open()) {
-        struct file_op{
-            string opLine;
-            int lineNum;
-        };
         vector <file_op> fileOutput;
         while (getline(file, line)) { // Place the full file inside a Vector. 
             if(line.length() != 0){
@@ -696,7 +696,7 @@ void searchFile(NFA regexEvaluator, string fileName) {
             }
             lineNumber++;
         }
-        vector<file_op>::iterator file_iterator;
+        //vector<file_op>::iterator file_iterator;
         int i=0;
         int threadCount = static_cast<int>(fileOutput.size())/10;
         //for(file_iterator = fileOutput.begin();file_iterator < fileOutput.end();file_iterator++){
