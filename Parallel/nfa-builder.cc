@@ -786,7 +786,6 @@ int main(int argc, char* argv[]){
 //PARALLELISED : FILE Based PROCESSING
 #pragma omp parallel for schedule(dynamic) shared(fileNames,resultantNFA) num_threads(threads) 
     for(i=0;i<fileNames.size();i++){ //TODO : Can Easily parallise this for loop. --> This Will Improve Performance When Number Of Files Increase.
-        cout << "VALUE OF I FOR THREAD : " << i << " " << omp_get_thread_num() << endl;
         searchFile(resultantNFA,fileNames.at(i));
     } 
 }
