@@ -50,7 +50,6 @@
 ![](Images/parallel-code.png)
 
 
-
 ## SERIAL VS PARALLEL COMPARISON
 
 - Search Query for the comparison : `and`
@@ -59,6 +58,11 @@
   ![](Images/comparison-by-files.png)
 - Comparison of Runtime to the Number Processors for Serial and parallel Code.
   ![](Images/comparison-by-processor-cores.png)
+
+<br/>
+<br/>
+<br/>
+<br/>
 
 ## SPEED UP FROM SERIAL TO PARALLEL
 
