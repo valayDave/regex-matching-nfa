@@ -10,6 +10,7 @@
 - No Bugs currently discovered. 
 - variety of test cases tried. 
 - If improper regex string is an input then the program might fail.
+- When writing the parallel part of the code there were issues with parallelising nested loops and threads. These got solved by an OpenMP method which allows the nested spawning of threads. 
 - Code works properly but will require more refactoring as there are a lot of unused methods and redundant methods.
 
 ## Process Flow
@@ -35,11 +36,58 @@
 - `void convert_to_dfa()::NFA`: Subset Constuction : Algorithm to convert the NFA to DFA. Uses `set<int> epsilon_closure ::NFA` and `set<int> move::NFA` to find the resulting DFA states.  
 - `vector<matched_symbol> traverse_dfa_graph()::NFA`: DFS with Recurrsion : DFA Node graph explored with recursion. No backtracking supported in the algorithm as DFA's are deterministic to once a path is chosen in a graph there is no point in back tracking. String matching takes place here.  a `vector<matched_symbol>` holds the tokens that got matched. 
 
+## PARALLELISATION PROCESS
+- After profiling the serial program the below was the output of the execution
+![](Images/profiler-op.png)
+- The profiler showed that majority of the time of execution was spent by the `searchFile()` and `NFA.match_string()` methods. The `searchFile()` method finds the lines of the file and the `NFA.match_string()` matches the expression to the string. 
+- So on basis of that there were two major Approaches to parallelism the code : 
+  - Parallelise the number of files that are given to the code. 
+  - Use threads to process the lines in each files. 
+- Parallelising the files was easy as the for loop required one `#pragma omp for` directive. 
+- While spawning threads for the lines of each file, there needed to be change in the serial. As seen below in the snapshot of the serial code, there is a while loop being used to extract the lines and find the pattern in the lines 
+![](Images/serial-code.png)
+- The `while` loop needed to be converted to a `for` loop so that the data can be split up among threads and processed in a parallel way. To do so, a `vector<file_op>` is used where `file_op` is a structure containing the line number and the line in the file. The is first read and loaded with the lines and line number for each line inside the vector. Post that the processing is done in parallel
+![](Images/parallel-code.png)
+
+
+
+## SERIAL VS PARALLEL COMPARISON
+
+- Search Query for the comparison : `and`
+- The comparison was done on two parameters with a constant input to get a good idea of the performance of the code for serial and parallel. The comparison is done with respect to number of files and the number of processors. Even though the code can handle extreamely complex patterns, the choice of this pattern was for the sake of getting a balance understanding of the runtime WRT the parameters. 
+- Comparison of Runtime to the Number Of Files for Serial and parallel Code.
+  ![](Images/comparison-by-files.png)
+- Comparison of Runtime to the Number Processors for Serial and parallel Code.
+  ![](Images/comparison-by-processor-cores.png)
+
+## SPEED UP FROM SERIAL TO PARALLEL
+
+CORES|	SPEED UP|
+| ------------- |-------------|
+2|	1.92355138|
+4|	2.364533891|
+6|	2.912817653|
+8|	2.954444228|
+12|	3.806473357|
+---
+FILES|	SPEED UP|
+| ------------- |-------------|
+1|	2.088177413|
+2|	3.091235729|
+3|	2.980249034|
+---
+
+- Circumstances needed before a speed-up is observed
+  - There is speed by because there is a parallelisation at two levels :  at the number of files and the individual lines in the files. Because of the nested method of threading the work distribution takes place in case of any typeof input. May it be one file or multiple files.
+  - The only case where the program is equivalent in performance to the serial code is when there is only one line and one file.
+  -  With the increase in the number of cores a speedup is likely to happen because there are just more processors to distribute the work. 
+
 ## Interactions and Citations
 
 - When I first approached the problem I tried to solve it using normal string matching but the solution was not the most optimal solution. After consulting William Sengir I realised that ordinary string matching with KMP algorithm and finding the largest word in the string is a half baked solution. 
 - Looking for more solutions and desperately trying to avoid using NFA's and DFA's I spoke to more class mates such as Craig Ignatowski who suggested me solutions like grep in linux. But Even though the thoughtprocess was good the solution was not complete. 
 - Finally after reading a lot online and in Books *Beautiful Code* and *The Practice of Programming by Brian W. Kernighan* I realised that the most optimal solution will come by using NFA' and DFA's.
+- While parallelising the code there was an issue at the end with the having nested threads. Michelle(TA) helped me research a method in the OpenMP library that helped fix this issue in the code.  
 
 
 ## REFERENCES 
@@ -69,6 +117,7 @@
 23. [The Practice of Programming by *Brian W. Kernighan*](http://index-of.co.uk/Etc/The.Practice.of.Programming.-.B.W..Kernighan..pdf)
 24. [Beautiful Code *(O'Reilly)*](http://shop.oreilly.com/product/9780596510046.do)
 25. [Subset Construction From NFA](http://www.cs.may.ie/staff/jpower/Courses/Previous/parsing/node9.html)
+26. [Nested Parallelism with OpenMP](https://docs.oracle.com/cd/E19205-01/819-5270/aewbc/index.html)
 
 ## Author 
  - [Valay Dave](<vddave@asu.edu>)
