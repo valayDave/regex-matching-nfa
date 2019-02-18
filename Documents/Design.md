@@ -5,6 +5,7 @@
 - Union : `a+b`
 - Kleene Start : `a*`
 - Parentesis based mixed Operators : `(l*o)+(o*)`
+- Parallelised Code. 
 
 ### Bugs
 - No Bugs currently discovered. 
@@ -40,31 +41,32 @@
 - After profiling the serial program the below was the output of the execution
 ![](Images/profiler-op.png)
 - The profiler showed that majority of the time of execution was spent by the `searchFile()` and `NFA.match_string()` methods. The `searchFile()` method finds the lines of the file and the `NFA.match_string()` matches the expression to the string. 
-- So on basis of that there were two major Approaches to parallelism the code : 
+- When other methods were parallelised there was an increase in runtime because of the overhead of spawning threads. 
+- So on basis of the profiling there were two major Approaches to parallelism the code : 
   - Parallelise the number of files that are given to the code. 
   - Use threads to process the lines in each files. 
 - Parallelising the files was easy as the for loop required one `#pragma omp for` directive. 
 - While spawning threads for the lines of each file, there needed to be change in the serial. As seen below in the snapshot of the serial code, there is a while loop being used to extract the lines and find the pattern in the lines 
 ![](Images/serial-code.png)
-- The `while` loop needed to be converted to a `for` loop so that the data can be split up among threads and processed in a parallel way. To do so, a `vector<file_op>` is used where `file_op` is a structure containing the line number and the line in the file. The is first read and loaded with the lines and line number for each line inside the vector. Post that the processing is done in parallel
+- The `while` loop needed to be converted to a `for` loop so that the data can be split up among threads and processed in a parallel way. To do so, a `vector<file_op>` is used where `file_op` is a structure containing the line number and the line in the file. The file is first read and loaded with the lines and line number for each line inside the vector. Post that the processing is done in parallel
 ![](Images/parallel-code.png)
+- When printing matches in the parallelised line reading, there was a need for the `#pragam omp critical` directive to ensure that only one line is printed at a time amongst all the threads.  
 
+<br/>
 
 ## SERIAL VS PARALLEL COMPARISON
 
+- The comparison was done on two parameters with a constant input to get a good idea of the performance of the code for serial and parallel. The comparison is done with respect to number of files and the number of processors. The comparsion was done with a simple and comparatively complex pattern. 
+- Even though the code can handle extreamely complex patterns, the choice of patterns was for the sake of getting a balance understanding of the runtime WRT the parameters. 
+- Input parameters are varied with complex and simple patterns
+---
 - Search Query for the comparison : `and`
-- The comparison was done on two parameters with a constant input to get a good idea of the performance of the code for serial and parallel. The comparison is done with respect to number of files and the number of processors. Even though the code can handle extreamely complex patterns, the choice of this pattern was for the sake of getting a balance understanding of the runtime WRT the parameters. 
 - Comparison of Runtime to the Number Of Files for Serial and parallel Code.
   ![](Images/comparison-by-files.png)
 - Comparison of Runtime to the Number Processors for Serial and parallel Code.
   ![](Images/comparison-by-processor-cores.png)
 
 <br/>
-<br/>
-<br/>
-<br/>
-
-## SPEED UP FROM SERIAL TO PARALLEL
 
 CORES|	SPEED UP|
 | ------------- |-------------|
@@ -73,16 +75,36 @@ CORES|	SPEED UP|
 6|	2.912817653|
 8|	2.954444228|
 12|	3.806473357|
----
+
 FILES|	SPEED UP|
 | ------------- |-------------|
 1|	2.088177413|
 2|	3.091235729|
 3|	2.980249034|
+
+- Search Query for the comparison : `and+gr(e)*n`
+- Comparison of Runtime to the Number Of Files for Serial and parallel Code.
+  ![](Images/comparison-by-files-complex-pattern.png)
+- Comparison of Runtime to the Number Processors for Serial and parallel Code.
+  ![](Images/comparison-by-processor-cores-complex-pattern.png)
+
+CORES|	SPEED UP|
+| ------------- |-------------|
+2|	1.534224302|
+4|	3.05615201|
+6|	3.228171558|
+8|	3.495240695|
+12|	3.577697751|
+
+FILES|	SPEED UP|
+| ------------- |-------------|
+1|	2.52635008|
+2|	3.375402399|
+3|	3.047199051|
 ---
 
 - Circumstances needed before a speed-up is observed
-  - There is speed by because there is a parallelisation at two levels :  at the number of files and the individual lines in the files. Because of the nested method of threading the work distribution takes place in case of any typeof input. May it be one file or multiple files.
+  - There is speedup because there is a parallelisation at two levels :  at the number of files and the individual lines in the files. Because of the nested method of threading the work distribution takes place in case of any typeof input. May it be one file or multiple files.
   - The only case where the program is equivalent in performance to the serial code is when there is only one line and one file.
   -  With the increase in the number of cores a speedup is likely to happen because there are just more processors to distribute the work. 
 
