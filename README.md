@@ -37,6 +37,12 @@
 - `void convert_to_dfa()::NFA`: Subset Constuction : Algorithm to convert the NFA to DFA. Uses `set<int> epsilon_closure ::NFA` and `set<int> move::NFA` to find the resulting DFA states.  
 - `vector<matched_symbol> traverse_dfa_graph()::NFA`: DFS with Recurrsion : DFA Node graph explored with recursion. No backtracking supported in the algorithm as DFA's are deterministic to once a path is chosen in a graph there is no point in back tracking. String matching takes place here.  a `vector<matched_symbol>` holds the tokens that got matched. 
 
+## Execution Information
+
+- `make` : run make to create the binaries `search` and `psearch`
+- `search "the" input_file1.txt input_file2.txt input_file3.txt` : either binaries search or psearch can be used. The second argument is the regular expression itself. Supported operators provided at the start of the README. 
+
+
 ## REFERENCES 
 
 1. [C++ Best Practices](https://github.com/lefticus/cppbestpractices)
